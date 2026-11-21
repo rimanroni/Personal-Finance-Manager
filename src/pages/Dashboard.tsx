@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { useData } from '../context/DataContext';
 import { accountStats, categoryTotals, dailySeries, totals } from '../lib/finance';
 import { daysUntil, money, shortDate } from '../lib/format';
+import { localize } from '../lib/i18n';
 import { reminderDaysLabel } from '../lib/notifications';
 import { AnimatedMoney, Donut, CategoryLegend, EmptyState, MonthSwitcher, SectionTitle } from '../components/ui';
 import { TxDayGroups } from '../components/TxRow';
@@ -16,7 +17,8 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
   onDelete: (t: Transaction) => void;
   onNavigate: (p: PageId) => void;
 }) {
-  const { accounts, transactions, categories, notes, month, settings, t } = useData();
+  const { accounts, transactions, categories, notes, month, settings, t, lang } = useData();
+  const tx = (s: string) => localize(lang, s);
   const tt = totals(accounts, transactions, month);
   const stats = useMemo(() => accountStats(accounts, transactions, month), [accounts, transactions, month]);
   const series = useMemo(() => dailySeries(transactions, 7), [transactions]);
@@ -44,7 +46,7 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
     <div>
       <div className="flex items-end justify-between">
         <div>
-          <div className="tiny muted">Good day, {(settings.profileName || 'there').trim().split(/\s+/)[0]} 👋</div>
+          <div className="tiny muted">{tx('Good day')}, {(settings.profileName || (lang === 'bn' ? 'বন্ধু' : 'there')).trim().split(/\s+/)[0]} 👋</div>
           <div className="h-title">{t('dashboard')}</div>
         </div>
         <div className="tiny muted hidden sm:block">{shortDate(new Date().toISOString().slice(0, 10))}</div>
@@ -55,7 +57,7 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
       <div className="balance-card mt-4">
         <div className="text-[10px] font-bold tracking-[.12em] uppercase opacity-85 display">{t('totalBalance')}</div>
         <AnimatedMoney value={tt.balance} className="num text-[32px] leading-tight mt-1" />
-        <div className="text-[11px] opacity-85">Across {accounts.length} accounts · on this device</div>
+        <div className="text-[11px] opacity-85">{lang === 'bn' ? `${accounts.length} অ্যাকাউন্ট জুড়ে · এই ডিভাইসে` : `Across ${accounts.length} accounts · on this device`}</div>
         <div className="flex gap-6 mt-4 relative z-10">
           <div>
             <AnimatedMoney value={tt.income} compact className="num text-[13px]" />
@@ -88,12 +90,12 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
         <div className="mt-3">
           <EmptyState
             icon="🌱"
-            text="No demo data here. Add your first account — only what you enter will ever be stored."
-            actionLabel="Add first account"
+            text={tx('No demo data here. Add your first account — only what you enter will ever be stored.')}
+            actionLabel={tx('Add first account')}
             onAction={() => onNavigate('accounts')}
           />
           <button className="link text-[11px] block mx-auto mt-2" onClick={() => onNavigate('categories')}>
-            Or add your own categories first →
+            {tx('Or add your own categories first →')}
           </button>
         </div>
       )}
@@ -102,15 +104,15 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
         style={{ background: nextReminder && daysUntil(nextReminder.due) <= 0 ? 'var(--expense-soft)' : '#fff8e8', borderColor: 'var(--line)' }}>
         <span className="text-lg">⏰</span>
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold">{nextReminder ? 'Upcoming reminder' : 'No reminder saved'}</div>
-          <div className="tiny muted truncate">{nextReminder?.text || 'Set a reminder date when adding a transaction'}</div>
+          <div className="text-[11px] font-bold">{nextReminder ? tx('Upcoming reminder') : tx('No reminder saved')}</div>
+          <div className="tiny muted truncate">{nextReminder?.text || tx('Set a reminder date when adding a transaction')}</div>
         </div>
         <span className="pill !text-[10px]" style={{ background: nextReminder && daysUntil(nextReminder.due) <= 0 ? 'var(--expense)' : '#b45309', color: '#fff' }}>
           {nextReminder ? reminderDaysLabel(nextReminder.due) : '—'}
         </span>
       </button>
 
-      <SectionTitle title="My Accounts" action="See all" onAction={() => onNavigate('accounts')} />
+      <SectionTitle title={tx('My Accounts')} action={tx('See all')} onAction={() => onNavigate('accounts')} />
       <div className="flex gap-2.5 overflow-x-auto scroll-none pb-1 -mx-1 px-1">
         {accounts.map((a) => {
           const s = stats[a.id] || { balance: 0, in: 0, out: 0 };
@@ -133,7 +135,7 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
         })}
       </div>
 
-      <SectionTitle title="Account Flow" action="Details" onAction={() => onNavigate('accounts')} />
+      <SectionTitle title={tx('Account Flow')} action={tx('Details')} onAction={() => onNavigate('accounts')} />
       <div className="card !py-1">
         {accounts.slice(0, 5).map((a) => {
           const s = stats[a.id] || { balance: 0, in: 0, out: 0 };
@@ -153,7 +155,7 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
         })}
       </div>
 
-      <SectionTitle title="Expense Trend" action={<span className="flex items-center gap-1"><BarChart3 size={13} /> 7 days</span>} />
+      <SectionTitle title={tx('Expense Trend')} action={<span className="flex items-center gap-1"><BarChart3 size={13} /> {tx('7 days')}</span>} />
       <div className="card">
         <div className="h-[160px] -mx-2">
           <ResponsiveContainer width="100%" height="100%">
@@ -167,19 +169,19 @@ export function Dashboard({ onAdd, onEdit, onDelete, onNavigate }: {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="tiny muted text-center mt-2">Daily money flow · last 7 days · BDT</div>
+        <div className="tiny muted text-center mt-2">{tx('Daily money flow · last 7 days · BDT')}</div>
       </div>
 
-      <SectionTitle title="Spending by Category" action="Details" onAction={() => onNavigate('reports')} />
+      <SectionTitle title={tx('Spending by Category')} action={tx('Details')} onAction={() => onNavigate('reports')} />
       <div className="card">
         <div className="flex items-center gap-4">
           <Donut data={cats} size={100} />
           <CategoryLegend data={cats} />
         </div>
-        <button className="link text-[11px] mt-3 flex items-center gap-1" onClick={() => onNavigate('reports')}>Full report <ChevronRight size={13} /></button>
+        <button className="link text-[11px] mt-3 flex items-center gap-1" onClick={() => onNavigate('reports')}>{tx('Full report')} <ChevronRight size={13} /></button>
       </div>
 
-      <SectionTitle title={t('recent')} action="View all" onAction={() => onNavigate('transactions')} />
+      <SectionTitle title={t('recent')} action={tx('View all')} onAction={() => onNavigate('transactions')} />
       {recent.length ? <TxDayGroups items={recent} onEdit={onEdit} onDelete={onDelete} limit={3} /> : <div className="card tiny muted text-center py-6">{t('noData')}</div>}
     </div>
   );

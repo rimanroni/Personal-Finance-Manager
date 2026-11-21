@@ -92,6 +92,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const t = useCallback((key: string) => translate(lang, key), [lang]);
 
   useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  useEffect(() => {
     applyTheme(settings.theme, settings.themeMode);
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
     if (!mq) return;

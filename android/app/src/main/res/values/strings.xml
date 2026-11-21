@@ -1,7 +1,7 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">personal-finance-manager</string>
-    <string name="title_activity_main">personal-finance-manager</string>
+    <string name="app_name">Finora</string>
+    <string name="title_activity_main">Finora</string>
     <string name="package_name">com.personalfinance.manager</string>
     <string name="custom_url_scheme">com.personalfinance.manager</string>
 </resources>

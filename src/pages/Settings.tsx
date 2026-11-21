@@ -13,6 +13,7 @@ import * as drive from '../lib/drive';
 import type { PageId } from '../components/Layout';
 import { ConfirmDialog, Modal, PageHeader, SectionTitle } from '../components/ui';
 import { DevFooter } from '../components/Layout';
+import { localize } from '../lib/i18n';
 
 type PassModalState =
   | { mode: 'restore'; name: string; text: string; driveId?: string }
@@ -34,8 +35,9 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
   const {
     accounts, categories, transactions, notes, budgets, recurring, backups, settings,
     updateSettings, enableNotifications, testNotification, exportData, importData, resetAll,
-    saveBackupMeta, deleteBackupMeta, showToast, runReminderCheck,
+    saveBackupMeta, deleteBackupMeta, showToast, runReminderCheck, lang,
   } = useData();
+  const tx = (s: string) => localize(lang, s);
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [nameDraft, setNameDraft] = useState(settings.profileName);
@@ -148,7 +150,7 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
   return (
     <div className="animate-fade pb-6">
-      <PageHeader title="Settings" subtitle="Your data stays on this device" />
+      <PageHeader title={tx('Settings')} subtitle={tx('Your data stays on this device')} />
 
       {/* Profile */}
       <div className="card mt-3 flex items-center gap-3">
@@ -157,20 +159,20 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
           {settings.profilePhoto ? <img src={settings.profilePhoto} alt="Profile" className="w-full h-full object-cover" /> : initials}
         </button>
         <div className="flex-1 min-w-0">
-          <div className="display text-[13px] truncate">{settings.profileName || 'Your name'}</div>
-          <div className="tiny muted truncate">{settings.googleEmail || 'Local data · No account needed'}</div>
+          <div className="display text-[13px] truncate">{settings.profileName || tx('Your name')}</div>
+          <div className="tiny muted truncate">{settings.googleEmail || tx('Local data · No account needed')}</div>
         </div>
-        <button className="icon-btn !w-8 !h-8 !rounded-xl" onClick={() => setProfileOpen(true)} title="Change name / photo"><Pencil size={14} /></button>
+        <button className="icon-btn !w-8 !h-8 !rounded-xl" onClick={() => setProfileOpen(true)} title={tx('Change name / photo')}><Pencil size={14} /></button>
       </div>
 
       <div className="card mt-2 !py-1">
-        <Row icon={UserRound} title="Display name" sub="Shown on your dashboard" right={settings.profileName} onClick={() => setProfileOpen(true)} />
-        <Row icon={Camera} title="Profile photo" sub={settings.profilePhoto ? 'Uploaded · tap to replace' : 'Upload from your phone'} right={settings.profilePhoto ? 'Change' : 'Add'} onClick={() => setProfileOpen(true)} />
+        <Row icon={UserRound} title={tx('Display name')} sub={tx('Shown on your dashboard')} right={settings.profileName} onClick={() => setProfileOpen(true)} />
+        <Row icon={Camera} title={tx('Profile photo')} sub={settings.profilePhoto ? tx('Uploaded · tap to replace') : tx('Upload from your phone')} right={settings.profilePhoto ? tx('Change') : tx('Add')} onClick={() => setProfileOpen(true)} />
       </div>
 
       {/* Google account */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">Google Account</div>
+        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Google Account')}</div>
         <div className="card">
           {connected ? (
             <>
@@ -179,23 +181,23 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
                   {settings.googlePhoto ? <img src={settings.googlePhoto} alt="Google profile" className="w-full h-full object-cover" /> : <GoogleG />}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[12px] font-semibold truncate">{settings.googleName || 'Google account'}</div>
+                  <div className="text-[12px] font-semibold truncate">{settings.googleName || tx('Google account')}</div>
                   <div className="tiny muted truncate">{settings.googleEmail}</div>
                 </div>
-                <span className="pill !text-[9px]" style={{ background: 'var(--income-soft)', color: 'var(--income)' }}><Check size={11} /> Connected</span>
+                <span className="pill !text-[9px]" style={{ background: 'var(--income-soft)', color: 'var(--income)' }}><Check size={11} /> {tx('Connected')}</span>
               </div>
-              <div className="tiny muted mt-3 text-center">Nothing is uploaded automatically. Drive is used only when you tap Backup or Restore.</div>
-              <button className="btn-ghost w-full mt-2 !py-2 !text-[11px]" onClick={doSignOut}><LogOut size={14} /> Disconnect</button>
+              <div className="tiny muted mt-3 text-center">{tx('Nothing is uploaded automatically. Drive is used only when you tap Backup or Restore.')}</div>
+              <button className="btn-ghost w-full mt-2 !py-2 !text-[11px]" onClick={doSignOut}><LogOut size={14} /> {tx('Disconnect')}</button>
             </>
           ) : (
             <>
-              <div className="tiny muted mb-3">Sign in with Google to unlock private backups. Your name, email and photo stay on this device.</div>
+              <div className="tiny muted mb-3">{tx('Sign in with Google to unlock private backups. Your name, email and photo stay on this device.')}</div>
               <button className="w-full flex items-center justify-center gap-2.5 bg-card border border-line rounded-xl py-3 text-[13px] font-semibold active:scale-[.98] transition disabled:opacity-60"
                 onClick={doGoogleSignIn} disabled={busy || !googleReady}>
-                <GoogleG /> {busy ? 'Opening Google…' : 'Sign in with Google'}
+                <GoogleG /> {busy ? tx('Opening Google…') : tx('Sign in with Google')}
               </button>
-              {!googleReady && <div className="tiny muted mt-2 text-center">Google sign-in is not configured for this deployment.</div>}
-              {settings.googleEmail && <div className="tiny muted mt-2 text-center">Last signed in as {settings.googleEmail}</div>}
+              {!googleReady && <div className="tiny muted mt-2 text-center">{tx('Google sign-in is not configured for this deployment.')}</div>}
+              {settings.googleEmail && <div className="tiny muted mt-2 text-center">{tx('Last signed in as')} {settings.googleEmail}</div>}
             </>
           )}
         </div>
@@ -203,9 +205,9 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Appearance */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">Appearance · 18 Themes</div>
+        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Appearance · 18 Themes')}</div>
         <div className="card">
-          <div className="tiny muted">Tap a color to change the whole app</div>
+          <div className="tiny muted">{tx('Tap a color to change the whole app')}</div>
           <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 mt-3">
             {THEMES.map((th, i) => (
               <button key={th.name} title={th.name} onClick={() => updateSettings({ theme: i })}
@@ -216,9 +218,9 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
           <div className="text-center tiny mt-3 font-bold" style={{ color: 'var(--primary-dark)' }}>{THEMES[settings.theme]?.name}</div>
           <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-line">
             {([
-              { id: 'light', label: 'Light', icon: Sun },
-              { id: 'dark', label: 'Dark', icon: Moon },
-              { id: 'system', label: 'System', icon: Laptop },
+              { id: 'light', label: tx('Light'), icon: Sun },
+              { id: 'dark', label: tx('Dark'), icon: Moon },
+              { id: 'system', label: tx('System'), icon: Laptop },
             ] as const).map((m) => {
               const Icon = m.icon;
               const active = settings.themeMode === m.id;
@@ -236,21 +238,37 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Preferences */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">Preferences</div>
+        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Preferences')}</div>
         <div className="card !py-1">
-          <Row icon={Database} title="Currency" sub="Default currency" right="BDT (৳)" onClick={() => showToast('Currency fixed to BDT')} />
-          <Row icon={Languages} title="Language" sub="English / বাংলা" right={settings.language === 'bn' ? 'বাংলা' : 'English'} onClick={() => updateSettings({ language: settings.language === 'bn' ? 'en' : 'bn' })} />
-          <Row icon={Globe} title="Date format" right={settings.dateFormat} onClick={() => showToast('Dates follow DD/MM/YYYY')} />
-          <Row icon={Bell} title="Notifications" sub="Native phone notifications on due dates"
+          <Row icon={Database} title={tx('Currency')} sub={tx('Default currency')} right="BDT (৳)" onClick={() => showToast('Currency fixed to BDT')} />
+          <div className="px-4 py-3 border-b border-line">
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Languages size={15} /></span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] font-semibold">{tx('Language')}</div>
+                <div className="tiny muted">{tx('Tap to switch')}</div>
+              </div>
+              <div className="flex rounded-xl border border-line overflow-hidden shrink-0">
+                <button onClick={() => updateSettings({ language: 'en' })}
+                  className={`px-3 py-1.5 text-[11px] font-bold ${settings.language === 'en' ? 'text-white' : 'muted'}`}
+                  style={settings.language === 'en' ? { background: 'var(--primary)' } : undefined}>English</button>
+                <button onClick={() => updateSettings({ language: 'bn' })}
+                  className={`px-3 py-1.5 text-[11px] font-bold ${settings.language === 'bn' ? 'text-white' : 'muted'}`}
+                  style={settings.language === 'bn' ? { background: 'var(--primary)' } : undefined}>বাংলা</button>
+              </div>
+            </div>
+          </div>
+          <Row icon={Globe} title={tx('Date format')} right={settings.dateFormat} onClick={() => showToast('Dates follow DD/MM/YYYY')} />
+          <Row icon={Bell} title={tx('Notifications')} sub={tx('Native phone notifications on due dates')}
             right={
-              <button onClick={async () => { if (settings.notificationsEnabled) { await updateSettings({ notificationsEnabled: false }); showToast('Notifications off'); } else await enableNotifications(); }}
+              <button onClick={async () => { if (settings.notificationsEnabled) { await updateSettings({ notificationsEnabled: false }); showToast(tx('Notifications off')); } else await enableNotifications(); }}
                 className="w-9 h-5 rounded-full relative transition" style={{ background: settings.notificationsEnabled ? 'var(--primary)' : '#d7dedc' }}>
                 <span className="absolute w-3.5 h-3.5 rounded-full bg-white top-[3px] shadow transition-all" style={{ left: settings.notificationsEnabled ? 18 : 3 }} />
               </button>} />
           {settings.notificationsEnabled && (
             <>
-              <Row icon={Bell} title="Test notification" sub="Send a sample right now" right="Send" onClick={() => { testNotification(); runReminderCheck(); }} />
-              <div className="tiny muted px-4 py-2 bg-appbg/60">Reminders fire when the app is open or installed. True background push needs a server.</div>
+              <Row icon={Bell} title={tx('Test notification')} sub={tx('Send a sample right now')} right={tx('Send')} onClick={() => { testNotification(); runReminderCheck(); }} />
+              <div className="tiny muted px-4 py-2 bg-appbg/60">{tx('Reminders fire when the app is open or installed. True background push needs a server.')}</div>
             </>
           )}
         </div>
@@ -258,30 +276,30 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Manage */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">Manage</div>
+        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Manage')}</div>
         <div className="card !py-1">
-          <Row icon={Tags} title="Categories" sub={`${categories.length} categories`} right="›" onClick={() => onNavigate('categories')} />
-          <Row icon={Wallet} title="Accounts" sub={`${accounts.length} accounts · bKash, Nagad, Rocket…`} right="›" onClick={() => onNavigate('accounts')} />
-          <Row icon={Repeat} title="Recurring transactions" sub={`${recurring.length} schedules`} right="›" onClick={() => onNavigate('recurring')} />
-          <Row icon={CalendarDays} title="Calendar" sub="Day-wise history" right="›" onClick={() => onNavigate('calendar')} />
+          <Row icon={Tags} title={tx('Categories')} sub={`${categories.length} ${lang === 'bn' ? 'বিভাগ' : 'categories'}`} right="›" onClick={() => onNavigate('categories')} />
+          <Row icon={Wallet} title={tx('Accounts')} sub={`${accounts.length} ${lang === 'bn' ? 'অ্যাকাউন্ট' : 'accounts'} · bKash, Nagad, Rocket…`} right="›" onClick={() => onNavigate('accounts')} />
+          <Row icon={Repeat} title={tx('Recurring transactions')} sub={`${recurring.length} ${lang === 'bn' ? 'সময়সূচি' : 'schedules'}`} right="›" onClick={() => onNavigate('recurring')} />
+          <Row icon={CalendarDays} title={tx('Calendar')} sub={tx('Day-wise history')} right="›" onClick={() => onNavigate('calendar')} />
         </div>
       </div>
 
       {/* Data & Security */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">Data & Security</div>
+        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Data & Security')}</div>
         <div className="card !py-1">
-          <Row icon={HardDrive} title="Local storage" sub={`IndexedDB · ${accounts.length} accounts · ${transactions.length} transactions`}
+          <Row icon={HardDrive} title={tx('Local storage')} sub={`IndexedDB · ${accounts.length} ${lang === 'bn' ? 'অ্যাকাউন্ট' : 'accounts'} · ${transactions.length} ${lang === 'bn' ? 'লেনদেন' : 'transactions'}`}
             right={<span className="pill !text-[9px]" style={{ background: 'var(--income-soft)', color: 'var(--income)' }}>ON</span>}
-            onClick={() => showToast('Data never auto-deletes')} />
+            onClick={() => showToast(tx('Data never auto-deletes'))} />
 
-          <Row icon={Download} title="Export data" sub="Download JSON backup" right="›" onClick={() => setPassModal({ mode: 'export' })} />
+          <Row icon={Download} title={tx('Export data')} sub={tx('Download JSON backup')} right="›" onClick={() => setPassModal({ mode: 'export' })} />
           <div className="px-4 py-2 bg-appbg/60 tiny muted flex items-center gap-2">
-            <Lock size={13} /> {exportEncrypted ? 'AES-256 encryption enabled for downloaded backups' : 'Plain JSON download (no encryption)'}
-            <button className="ml-auto font-semibold" style={{ color: 'var(--primary-dark)' }} onClick={() => setExportEncrypted((v) => !v)}>{exportEncrypted ? 'Disable' : 'Enable'}</button>
+            <Lock size={13} /> {exportEncrypted ? tx('AES-256 encryption enabled for downloaded backups') : tx('Plain JSON download (no encryption)')}
+            <button className="ml-auto font-semibold" style={{ color: 'var(--primary-dark)' }} onClick={() => setExportEncrypted((v) => !v)}>{exportEncrypted ? tx('Disable') : tx('Enable')}</button>
           </div>
 
-          <Row icon={Upload} title="Import data" sub="Validate before restoring" right="›" onClick={() => document.getElementById('importFile')?.click()} />
+          <Row icon={Upload} title={tx('Import data')} sub={tx('Validate before restoring')} right="›" onClick={() => document.getElementById('importFile')?.click()} />
           <input id="importFile" type="file" accept="application/json" className="hidden" onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
@@ -291,21 +309,21 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
             e.target.value = '';
           }} />
 
-          <Row icon={connected ? CloudUpload : CloudOff} title="Google Drive backup"
-            sub={connected ? `Connected · ${backupCount} encrypted backup(s) · private appDataFolder` : 'Sign in with Google to enable'}
+          <Row icon={connected ? CloudUpload : CloudOff} title={tx('Google Drive backup')}
+            sub={connected ? `${tx('Connected ·')} ${backupCount} ${tx('encrypted backup(s) · private appDataFolder')}` : tx('Sign in with Google to enable')}
             right={connected
               ? <button className="btn-soft !py-1.5 !px-2 !text-[10px]" disabled={busy} onClick={() => setPassModal({ mode: 'upload' })}>
-                  {busy ? 'Uploading…' : 'Backup now'}
+                  {busy ? 'Uploading…' : tx('Backup now')}
                 </button>
-              : 'Sign in'}
+              : tx('Sign in')}
             onClick={connected ? undefined : doGoogleSignIn} />
 
           {connected && (
             <div className="px-4 py-2 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <div className="tiny muted">Backups in your Drive</div>
+                <div className="tiny muted">{tx('Backups in your Drive')}</div>
                 <button className="link !text-[10px] flex items-center gap-1" onClick={() => listDriveBackups()} disabled={listing}>
-                  <RefreshCw size={11} className={listing ? 'animate-spin' : ''} /> {listing ? 'Checking…' : 'Refresh from Drive'}
+                  <RefreshCw size={11} className={listing ? 'animate-spin' : ''} /> {listing ? tx('Checking…') : tx('Refresh from Drive')}
                 </button>
               </div>
               {cloudBackups.slice(0, 5).map((f) => {
@@ -321,8 +339,8 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
                         if (encrypted) setPassModal({ mode: 'restore', name: f.name, text, driveId: f.id });
                         else await doRestoreText(text, f.name);
                       } catch (e) { handleDriveError(e, 'Download failed'); }
-                    }}>Restore</button>
-                    <button className="icon-btn !w-6 !h-6 !rounded-md" title="Delete backup"
+                    }}>{tx('Restore')}</button>
+                    <button className="icon-btn !w-6 !h-6 !rounded-md" title={tx('Delete backup')}
                       onClick={async () => {
                         try {
                           await drive.deleteBackup(f.id);
@@ -334,39 +352,39 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
                   </div>
                 );
               })}
-              {cloudBackups.length === 0 && <div className="tiny muted">No cloud backups yet. Tap “Backup now”.</div>}
+              {cloudBackups.length === 0 && <div className="tiny muted">{tx('No cloud backups yet. Tap “Backup now”.')}</div>}
             </div>
           )}
 
-          <Row icon={ShieldCheck} title="Backup status"
-            sub={connected ? `Encrypted · ${backupCount} in Drive · ${settings.googleEmail || 'Google account'}` : 'Local only · Drive not connected'}
-            right={<span className="pill !text-[9px]" style={{ background: connected ? 'var(--income-soft)' : 'var(--app-bg)', color: connected ? 'var(--income)' : 'var(--muted)' }}>{connected ? 'Ready' : 'Local'}</span>} />
-          {settings.lastBackupAt && <div className="px-4 py-2 tiny muted">Last backup: {new Date(settings.lastBackupAt).toLocaleString()}</div>}
+          <Row icon={ShieldCheck} title={tx('Backup status')}
+            sub={connected ? `Encrypted · ${backupCount} in Drive · ${settings.googleEmail || tx('Google account')}` : tx('Local only · Drive not connected')}
+            right={<span className="pill !text-[9px]" style={{ background: connected ? 'var(--income-soft)' : 'var(--app-bg)', color: connected ? 'var(--income)' : 'var(--muted)' }}>{connected ? tx('Ready') : tx('Local')}</span>} />
+          {settings.lastBackupAt && <div className="px-4 py-2 tiny muted">{lang === 'bn' ? 'শেষ ব্যাকআপ:' : 'Last backup:'} {new Date(settings.lastBackupAt).toLocaleString()}</div>}
         </div>
       </div>
 
       {/* Danger */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">Danger zone</div>
+        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Danger zone')}</div>
         <div className="card !py-1">
-          <Row icon={RotateCcw} title="Reset application" sub="Erases all local data and starts completely empty"
-            right={<span style={{ color: 'var(--expense)' }}>Reset</span>} onClick={() => setResetOpen(true)} />
+          <Row icon={RotateCcw} title={tx('Reset application')} sub={tx('Erases all local data and starts completely empty')}
+            right={<span style={{ color: 'var(--expense)' }}>{tx('Reset')}</span>} onClick={() => setResetOpen(true)} />
         </div>
       </div>
 
-      <div className="tiny muted text-center mt-5 leading-relaxed">Your data stays on this device. No tracking, no analytics, no uploads without your action.</div>
+      <div className="tiny muted text-center mt-5 leading-relaxed">{tx('Your data stays on this device. No tracking, no analytics, no uploads without your action.')}</div>
       <DevFooter compact />
 
       {/* Profile modal */}
-      <Modal open={profileOpen} title="Edit Profile" onClose={() => setProfileOpen(false)}
+      <Modal open={profileOpen} title={tx('Edit Profile')} onClose={() => setProfileOpen(false)}
         footer={<>
-          <button className="btn-ghost flex-1" onClick={() => setProfileOpen(false)}>Cancel</button>
+          <button className="btn-ghost flex-1" onClick={() => setProfileOpen(false)}>{tx('Cancel')}</button>
           <button className="btn-primary flex-1" onClick={async () => {
-            if (!nameDraft.trim()) { showToast('Enter your name'); return; }
+            if (!nameDraft.trim()) { showToast(lang === 'bn' ? 'নাম লিখুন' : 'Enter your name'); return; }
             await updateSettings({ profileName: nameDraft.trim(), profilePhoto: photoDraft });
             setProfileOpen(false);
-            showToast('Profile updated');
-          }}>Save Profile</button>
+            showToast(lang === 'bn' ? 'প্রোফাইল আপডেট হয়েছে' : 'Profile updated');
+          }}>{tx('Save Profile')}</button>
         </>}>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
@@ -374,63 +392,63 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
               {photoDraft ? <img src={photoDraft} alt="Profile" className="w-full h-full object-cover" /> : initials}
             </div>
             <div>
-              <label className="btn-soft !py-2 !px-3 !text-[11px] cursor-pointer"><Camera size={14} /> Upload photo
+              <label className="btn-soft !py-2 !px-3 !text-[11px] cursor-pointer"><Camera size={14} /> {tx('Upload photo')}
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (f) setPhotoDraft(await shrinkImage(f, 400, 0.8));
                 }} />
               </label>
-              {photoDraft && <button className="link !text-[10px] block mt-1" onClick={() => setPhotoDraft(undefined)}>Remove photo</button>}
+              {photoDraft && <button className="link !text-[10px] block mt-1" onClick={() => setPhotoDraft(undefined)}>{tx('Remove photo')}</button>}
             </div>
           </div>
-          <div><div className="field-label mb-1">Display name</div><input className="input" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder="Your name" /></div>
-          <div className="tiny muted">Photo is compressed and stored only on this device.</div>
+          <div><div className="field-label mb-1">{tx('Display name')}</div><input className="input" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder={tx('Your name')} /></div>
+          <div className="tiny muted">{tx('Photo is compressed and stored only on this device.')}</div>
         </div>
       </Modal>
 
       {/* Passphrase modal */}
       <Modal open={!!passModal}
-        title={passModal?.mode === 'restore' ? 'Decrypt & Restore' : passModal?.mode === 'upload' ? 'Encrypt & Upload to Drive' : exportEncrypted ? 'Encrypt & Download' : 'Download Backup'}
+        title={passModal?.mode === 'restore' ? tx('Decrypt & Restore') : passModal?.mode === 'upload' ? tx('Encrypt & Upload to Drive') : exportEncrypted ? tx('Encrypt & Download') : tx('Download Backup')}
         onClose={() => setPassModal(null)}
         footer={<>
-          <button className="btn-ghost flex-1" onClick={() => setPassModal(null)}>Cancel</button>
+          <button className="btn-ghost flex-1" onClick={() => setPassModal(null)}>{tx('Cancel')}</button>
           <button className="btn-primary flex-1" onClick={async () => {
             if (!passModal) return;
             if (passModal.mode === 'restore') {
-              if (!pass) { showToast('Enter the passphrase'); return; }
+              if (!pass) { showToast(lang === 'bn' ? 'পাসফ্রেজ লিখুন' : 'Enter the passphrase'); return; }
               await doRestoreText(passModal.text, passModal.name, pass);
               setPassModal(null); setPass('');
             } else if (passModal.mode === 'upload') {
-              if (pass.length < 4) { showToast('Use at least 4 characters'); return; }
+              if (pass.length < 4) { showToast(lang === 'bn' ? 'কমপক্ষে ৪টি অক্ষর ব্যবহার করুন' : 'Use at least 4 characters'); return; }
               await doUpload(pass);
             } else if (exportEncrypted) {
-              if (pass.length < 4) { showToast('Use at least 4 characters'); return; }
+              if (pass.length < 4) { showToast(lang === 'bn' ? 'কমপক্ষে ৪টি অক্ষর ব্যবহার করুন' : 'Use at least 4 characters'); return; }
               await exportData(true, pass);
               setPassModal(null); setPass('');
             } else {
               await exportData(false);
               setPassModal(null); setPass('');
             }
-          }}>{passModal?.mode === 'restore' ? 'Restore' : passModal?.mode === 'upload' ? 'Encrypt & Upload' : 'Download'}</button>
+          }}>{passModal?.mode === 'restore' ? tx('Restore') : passModal?.mode === 'upload' ? tx('Encrypt & Upload') : tx('Download')}</button>
         </>}>
         {passModal?.mode === 'restore' ? (
-          <div><div className="field-label mb-1">Backup passphrase</div><input type="password" className="input" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="The password you used when backing up" /></div>
+          <div><div className="field-label mb-1">{tx('Backup passphrase')}</div><input type="password" className="input" value={pass} onChange={(e) => setPass(e.target.value)} placeholder={tx('The password you used when backing up')} /></div>
         ) : passModal?.mode === 'upload' ? (
           <>
-            <div className="tiny muted mb-3">Your backup is encrypted with AES-256-GCM before it leaves this device. The passphrase is never stored — you need it to restore.</div>
-            <div><div className="field-label mb-1">Passphrase</div><input type="password" className="input" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="At least 4 characters" /></div>
+            <div className="tiny muted mb-3">{tx('Your backup is encrypted with AES-256-GCM before it leaves this device. The passphrase is never stored — you need it to restore.')}</div>
+            <div><div className="field-label mb-1">{tx('Passphrase')}</div><input type="password" className="input" value={pass} onChange={(e) => setPass(e.target.value)} placeholder={tx('At least 4 characters')} /></div>
           </>
         ) : exportEncrypted ? (
           <>
-            <div className="tiny muted mb-3">Choose a passphrase. It is never stored — you will need it to restore this backup.</div>
-            <div><div className="field-label mb-1">Passphrase</div><input type="password" className="input" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="At least 4 characters" /></div>
+            <div className="tiny muted mb-3">{tx('Choose a passphrase. It is never stored — you will need it to restore this backup.')}</div>
+            <div><div className="field-label mb-1">{tx('Passphrase')}</div><input type="password" className="input" value={pass} onChange={(e) => setPass(e.target.value)} placeholder={tx('At least 4 characters')} /></div>
           </>
-        ) : <div className="tiny muted">A plain JSON file will be downloaded. Anyone with the file can read your data.</div>}
+        ) : <div className="tiny muted">{tx('A plain JSON file will be downloaded. Anyone with the file can read your data.')}</div>}
       </Modal>
 
-      <ConfirmDialog open={resetOpen} title="Reset application?"
-        message="All local data will be erased. The app will start empty — only entries you add from now on will remain. Export a backup first if needed."
-        confirmLabel="Reset" onCancel={() => setResetOpen(false)} onConfirm={async () => { await resetAll(); setResetOpen(false); }} />
+      <ConfirmDialog open={resetOpen} title={tx('Reset application?')}
+        message={tx('All local data will be erased. The app will start empty — only entries you add from now on will remain. Export a backup first if needed.')}
+        confirmLabel={tx('Reset')} onCancel={() => setResetOpen(false)} onConfirm={async () => { await resetAll(); setResetOpen(false); }} />
     </div>
   );
 }

@@ -2,11 +2,28 @@
  * Google sign-in (OpenID Connect) + optional Drive backup using appDataFolder.
  * The access token is kept in memory only — never written to storage.
  *
- * The OAuth Client ID comes from deployment configuration, never from the UI.
- * A client secret is intentionally not used or stored anywhere in this frontend.
+ * Android APK: sign-in is handled by the native GoogleAuth Capacitor plugin
+ * (Google Identity Services, bound to package name + SHA-1). No web client ID,
+ * no localhost origin and no client secret are involved.
+ *
+ * Web/PWA: Google Identity Services token client with a deployment-supplied
+ * public Client ID. A client secret is never used or stored in the frontend.
  */
 
-import { getGoogleClientId } from './googleConfig';
+import { registerPlugin } from '@capacitor/core';
+import { getGoogleClientId, isNativeAndroid } from './googleConfig';
+
+type NativeAuthResult =
+  | { status: 'success'; accessToken: string; expiresIn?: number; name?: string; email?: string; picture?: string }
+  | { status: 'cancelled' }
+  | { status: 'error'; message: string };
+
+interface NativeGoogleAuthPlugin {
+  signIn(options?: { selectAccount?: boolean }): Promise<NativeAuthResult>;
+  disconnect(): Promise<void>;
+}
+
+const nativeGoogleAuth = registerPlugin<NativeGoogleAuthPlugin>('GoogleAuth');
 
 export interface GoogleProfile {
   name: string;
@@ -48,6 +65,10 @@ function clearSession() {
 export function disconnect() {
   const token = accessToken;
   clearSession();
+  if (isNativeAndroid()) {
+    void nativeGoogleAuth.disconnect().catch(() => {});
+    return;
+  }
   try {
     if (token) (window as any).google?.accounts?.oauth2?.revoke?.(token, () => {});
   } catch (_) {
@@ -70,9 +91,33 @@ function loadGIS(): Promise<void> {
 }
 
 type TokenResult =
-  | { status: 'success'; token: string }
+  | { status: 'success'; token: string; profile?: GoogleProfile }
   | { status: 'cancelled' }
   | { status: 'error'; message: string };
+
+/** Android: ask the native plugin for a token via Google Identity Services. */
+async function requestNativeToken(prompt: 'select_account' | ''): Promise<TokenResult> {
+  try {
+    const res = await nativeGoogleAuth.signIn({ selectAccount: prompt === 'select_account' });
+    if (res.status === 'cancelled') return { status: 'cancelled' };
+    if (res.status === 'error') return { status: 'error', message: res.message };
+
+    accessToken = res.accessToken;
+    const ttl = Math.max(60, Number(res.expiresIn) || 3600);
+    tokenExpiresAt = Date.now() + (ttl - 60) * 1000;
+
+    const profile: GoogleProfile | undefined = res.email || res.name
+      ? { name: res.name || 'Google User', email: res.email || '', picture: res.picture || '' }
+      : undefined;
+
+    return { status: 'success', token: res.accessToken, profile };
+  } catch (e) {
+    return {
+      status: 'error',
+      message: e instanceof Error ? e.message : 'Google sign-in could not be completed. Please try again.',
+    };
+  }
+}
 
 function classifyGoogleError(err: unknown): { cancelled: true } | { cancelled: false; message: string } {
   const code = typeof err === 'string'
@@ -95,6 +140,10 @@ function classifyGoogleError(err: unknown): { cancelled: true } | { cancelled: f
 }
 
 async function requestGoogleToken(prompt: 'select_account' | ''): Promise<TokenResult> {
+  // Installed APK: native Google Sign-In. Never use the web GIS flow here —
+  // the Capacitor WebView origin cannot be a Google authorized JS origin.
+  if (isNativeAndroid()) return requestNativeToken(prompt);
+
   const clientId = await getGoogleClientId();
   if (!clientId) return { status: 'error', message: 'Google sign-in is not configured for this deployment.' };
 
@@ -184,7 +233,9 @@ export async function signInWithGoogle(): Promise<GoogleSignInResult> {
   if (token.status === 'error') return { status: 'error', message: token.message };
 
   try {
-    return { status: 'success', profile: await getGoogleProfile() };
+    // Native Play services can return the profile directly; otherwise read it
+    // from the userinfo endpoint with the access token (same as web/PWA).
+    return { status: 'success', profile: token.profile || await getGoogleProfile() };
   } catch (e) {
     return {
       status: 'error',

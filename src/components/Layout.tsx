@@ -6,6 +6,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { daysUntil, money } from '../lib/format';
+import { localize } from '../lib/i18n';
 import { reminderDaysLabel } from '../lib/notifications';
 
 export type PageId = 'home' | 'transactions' | 'reports' | 'accounts' | 'settings' | 'budget' | 'calendar' | 'categories' | 'recurring';
@@ -41,7 +42,8 @@ function DevFooter({ compact = false }: { compact?: boolean }) {
 }
 
 function NotificationPanel({ onClose }: { onClose: () => void }) {
-  const { transactions, notes, recurring, enableNotifications, settings, testNotification, showToast } = useData();
+  const { transactions, notes, recurring, enableNotifications, settings, testNotification, showToast, lang } = useData();
+  const tx = (s: string) => localize(lang, s);
   const reminders = [
     ...transactions.filter((x) => x.reminderDate).map((x) => ({ id: x.id, due: x.reminderDate!, text: x.note || `${x.categoryId} · ${money(x.amount)}` })),
     ...notes.filter((x) => x.reminderDate).map((x) => ({ id: x.id, due: x.reminderDate!, text: x.text })),
@@ -53,10 +55,10 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div className="absolute right-0 top-11 w-[300px] max-w-[86vw] bg-card border border-line rounded-2xl shadow-xl z-50 p-3 animate-drop">
         <div className="row mb-2">
-          <div className="display text-[13px]">Reminders</div>
+          <div className="display text-[13px]">{tx('Reminders')}</div>
           <button className="icon-btn !w-6 !h-6 !rounded-md" onClick={onClose}><X size={12} /></button>
         </div>
-        {reminders.length === 0 && <div className="tiny muted py-3 text-center">No reminders saved yet.</div>}
+        {reminders.length === 0 && <div className="tiny muted py-3 text-center">{tx('No reminders saved yet.')}</div>}
         {reminders.map((r) => (
           <div key={r.id} className="flex items-start gap-2 py-2 border-t border-line first:border-0">
             <span className="text-base">⏰</span>
@@ -68,11 +70,11 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
         ))}
         <div className="flex gap-2 mt-2 pt-2 border-t border-line">
           {!settings.notificationsEnabled ? (
-            <button className="btn-soft flex-1 !py-2 !text-[11px]" onClick={() => { enableNotifications(); onClose(); }}>Enable notifications</button>
+            <button className="btn-soft flex-1 !py-2 !text-[11px]" onClick={() => { enableNotifications(); onClose(); }}>{tx('Enable notifications')}</button>
           ) : (
-            <button className="btn-ghost flex-1 !py-2 !text-[11px]" onClick={() => { testNotification(); onClose(); }}>Test notification</button>
+            <button className="btn-ghost flex-1 !py-2 !text-[11px]" onClick={() => { testNotification(); onClose(); }}>{tx('Test notification')}</button>
           )}
-          <button className="btn-ghost !py-2 !text-[11px]" onClick={() => { showToast('Set a reminder date in the transaction form'); onClose(); }}>How?</button>
+          <button className="btn-ghost !py-2 !text-[11px]" onClick={() => { showToast(tx('Set a reminder date in the transaction form')); onClose(); }}>{tx('How?')}</button>
         </div>
       </div>
     </>
@@ -83,7 +85,8 @@ export function Layout({ page, setPage, onAdd, children }: {
   page: PageId; setPage: (p: PageId) => void; onAdd: () => void; children: ReactNode;
 }) {
   const [showNotif, setShowNotif] = useState(false);
-  const { accounts, transactions, settings, showToast } = useData();
+  const { accounts, transactions, settings, showToast, lang } = useData();
+  const tx = (s: string) => localize(lang, s);
   const total = accounts.reduce((s, a) => s + a.openingBalance, 0);
   const pending = transactions.filter((t) => t.reminderDate && daysUntil(t.reminderDate) <= 0).length;
   const initials = (settings.profileName || 'User').trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || 'U';
@@ -112,15 +115,15 @@ export function Layout({ page, setPage, onAdd, children }: {
                 } : undefined}>
                 {active && <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-white/85" />}
                 <Icon size={18} className={`relative transition-transform duration-200 ${active ? 'scale-110' : ''}`} />
-                <span className="relative">{n.label}</span>
+                <span className="relative">{tx(n.label)}</span>
               </button>
             );
           })}
         </nav>
         <div className="mt-6 px-3 py-3 rounded-2xl bg-appbg">
-          <div className="tiny muted">Local balance</div>
+          <div className="tiny muted">{tx('Local balance')}</div>
           <div className="num text-[16px] mt-0.5">{money(total)}</div>
-          <button className="link text-[11px] mt-2" onClick={() => showToast(`${accounts.length} accounts · ${transactions.length} entries on this device`)}>View details</button>
+          <button className="link text-[11px] mt-2" onClick={() => showToast(`${accounts.length} accounts · ${transactions.length} entries on this device`)}>{tx('View details')}</button>
         </div>
         <DevFooter />
       </aside>
@@ -130,9 +133,9 @@ export function Layout({ page, setPage, onAdd, children }: {
         <header className="app-header sticky top-0 z-30 bg-appbg/85 backdrop-blur-xl border-b border-line/70 px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 lg:hidden">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white display text-sm" style={{ background: 'var(--primary)' }}>৳</div>
-            <div className="display text-[14px]">Finance Manager</div>
+            <div className="display text-[14px]">{tx('Finance Manager')}</div>
           </div>
-          <div className="hidden lg:block tiny muted">{settings.notificationsEnabled ? '🔔 Notifications on · Local data only' : '🔕 Notifications off · Local data only'}</div>
+          <div className="hidden lg:block tiny muted">{settings.notificationsEnabled ? `🔔 ${tx('Notifications on · Local data only')}` : `🔕 ${tx('Notifications off · Local data only')}`}</div>
           <div className="flex items-center gap-2 relative">
             <button className="icon-btn" onClick={() => setShowNotif((v) => !v)} aria-label="Notifications">
               <Bell size={17} />
@@ -165,7 +168,7 @@ export function Layout({ page, setPage, onAdd, children }: {
               <span className={`absolute inset-x-1 inset-y-0 rounded-xl bg-primary-soft transition-all duration-300 ${active ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`} />
               <Icon size={20} strokeWidth={active ? 2.5 : 2}
                 className={`relative z-10 transition-transform duration-300 ${active ? '-translate-y-0.5 scale-110' : ''}`} />
-              <span className="relative z-10 text-[10px] font-semibold">{item.label}</span>
+              <span className="relative z-10 text-[10px] font-semibold">{tx(item.label)}</span>
             </button>
           );
         })}
