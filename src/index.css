@@ -2,26 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * DESIGN SYSTEM v2 — "Slate & Indigo"
+ * Cool slate canvas, borderless floating cards, deep navy shell, pill controls.
+ * Every colour except the fixed navy shell flows from --primary, so all 18
+ * themes keep working exactly as before.
+ */
 :root {
-  --bg: #edf1f2;
-  --app-bg: #f6f8f8;
+  --bg: #e4eaf6;
+  --app-bg: #eef2fb;
   --card: #ffffff;
-  --ink: #14211d;
-  --muted: #82908c;
-  --line: #e8edeb;
-  --primary: #0d9b88;
-  --primary-dark: #0a7a6b;
-  --primary-soft: #e3f5f1;
-  --primary-rgb: 13, 155, 136;
-  --primary-dark-rgb: 10, 122, 107;
-  --soft-rgb: 227, 245, 241;
-  --income: #16a34a;
-  --income-soft: #e6f6ec;
-  --expense: #ef5a5a;
-  --expense-soft: #fdecec;
+  --ink: #101a30;
+  --muted: #6c7893;
+  --line: #e6ebf5;
+  --primary: #4f46e5;
+  --primary-dark: #3730a3;
+  --primary-soft: #eef2ff;
+  --primary-rgb: 79, 70, 229;
+  --primary-dark-rgb: 55, 48, 163;
+  --soft-rgb: 238, 242, 255;
+  --income: #0d9668;
+  --income-soft: #e4f7f0;
+  --expense: #e04f63;
+  --expense-soft: #fdecef;
   --blue: #3b82f6;
   --amber: #f59e0b;
   --purple: #8b5cf6;
+
+  /* Fixed deep-navy app shell — independent of the 18 accent themes. */
+  --shell: #151d33;
+  --shell-2: #1d2742;
 
   /* Android: Capacitor's SystemBars plugin overwrites these inline on <html>
      with the real status-bar / cutout insets. On web, env() keeps iOS PWA
@@ -33,15 +43,17 @@
 }
 
 .dark {
-  --bg: #0c1311;
-  --app-bg: #101a17;
-  --card: #16221e;
-  --ink: #e8f0ed;
-  --muted: #8ea19a;
-  --line: #26352f;
-  --primary-soft: #173b33;
-  --income-soft: #143826;
-  --expense-soft: #432325;
+  --bg: #060b16;
+  --app-bg: #0b1220;
+  --card: #151e31;
+  --ink: #eef2ff;
+  --muted: #94a1be;
+  --line: #25314a;
+  --primary-soft: #232353;
+  --income-soft: #0f352b;
+  --expense-soft: #3a1d29;
+  --shell: #080d19;
+  --shell-2: #111a2d;
 }
 
 * { -webkit-tap-highlight-color: transparent; }
@@ -51,54 +63,34 @@ body {
   margin: 0;
   background: transparent;
   color: var(--ink);
-  font-family: 'Hind Siliguri', system-ui, sans-serif;
-  line-height: 1.45;
+  font-family: 'Plus Jakarta Sans', 'Hind Siliguri', system-ui, sans-serif;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 #root { position: relative; isolation: isolate; min-height: 100%; }
 
 /*
- * Android status-bar / cutout handling.
- *
- * Capacitor 8 (targetSdk 36) is edge-to-edge: the WebView fills the screen and
- * the system status bar is drawn on top of it. `insetsHandling: "css"` makes
- * the plugin report the exact top inset (including notches) as
- * --safe-area-inset-top. We consume it here so the header starts BELOW the bar.
- *
- * On older WebViews the plugin pads the native view instead and reports 0,
- * so this padding becomes 0 and there is never a double gap. On desktop/PWA
- * the env() fallback is also 0, so the web layout is unchanged.
- *
- * The gradient paints a solid, theme-colored strip behind the status-bar icons
- * (the translucent blurred header alone would let content show through).
+ * Edge-to-edge Android: the WebView fills the screen, so the header paints a
+ * solid navy strip behind the status bar. The safe-area inset is consumed as
+ * padding here; no double gap on older WebViews (plugin reports 0 there).
  */
 .app-header {
-  padding-top: calc(0.75rem + var(--safe-area-inset-top, 0px));
-  padding-bottom: 0.75rem;
-  background-image: linear-gradient(
-    to bottom,
-    var(--app-bg) 0,
-    var(--app-bg) var(--safe-area-inset-top, 0px),
-    transparent var(--safe-area-inset-top, 0px)
-  );
+  padding-top: calc(0.7rem + var(--safe-area-inset-top, 0px));
+  padding-bottom: 0.7rem;
+  background: var(--shell);
+  color: #fff;
 }
-
-/* Same treatment for the tablet/landscape sidebar, which also starts at top 0. */
 .app-sidebar {
-  padding-top: calc(1.5rem + var(--safe-area-inset-top, 0px));
-  padding-bottom: 1.5rem;
+  padding-top: calc(1.4rem + var(--safe-area-inset-top, 0px));
+  padding-bottom: 1.4rem;
   padding-left: 1rem;
   padding-right: 1rem;
-  background-image: linear-gradient(
-    to bottom,
-    var(--card) 0,
-    var(--card) var(--safe-area-inset-top, 0px),
-    transparent var(--safe-area-inset-top, 0px)
-  );
+  background: var(--shell);
+  color: #fff;
 }
 
-/* Theme-aware ambient mesh. One fixed compositor layer — no blurred filters. */
+/* Very soft slate wash — static, no blur/filter, subtle depth only. */
 #root::before {
   content: '';
   position: fixed;
@@ -106,76 +98,70 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(34% 30% at 14% 6%, rgba(var(--primary-rgb), .13), transparent 72%),
-    radial-gradient(28% 26% at 88% 2%, rgba(var(--soft-rgb), .85), transparent 74%),
-    radial-gradient(32% 28% at 82% 92%, rgba(var(--primary-rgb), .09), transparent 72%),
-    radial-gradient(26% 24% at 6% 86%, rgba(var(--soft-rgb), .6), transparent 74%);
-  animation: ambientDrift 26s ease-in-out infinite alternate;
-  will-change: transform;
+    radial-gradient(40% 34% at 8% 0%, rgba(var(--primary-rgb), .055), transparent 72%),
+    radial-gradient(34% 30% at 92% 100%, rgba(var(--soft-rgb), .55), transparent 74%);
 }
 .dark #root::before {
-  background:
-    radial-gradient(36% 32% at 12% 4%, rgba(var(--primary-rgb), .16), transparent 70%),
-    radial-gradient(30% 28% at 90% 10%, rgba(var(--primary-dark-rgb), .2), transparent 72%),
-    radial-gradient(34% 30% at 80% 94%, rgba(var(--primary-rgb), .11), transparent 72%),
-    radial-gradient(28% 26% at 4% 82%, rgba(var(--primary-dark-rgb), .16), transparent 74%);
+  background: radial-gradient(40% 34% at 8% 0%, rgba(var(--primary-rgb), .09), transparent 72%);
 }
 button, input, select, textarea { font-family: inherit; }
 
 .num, .font-num {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.035em;
-  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-weight: 800;
 }
-.display { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; letter-spacing: -0.04em; font-weight: 800; }
+.display { font-family: 'Plus Jakarta Sans', 'Hind Siliguri', system-ui, sans-serif; letter-spacing: -0.045em; font-weight: 800; }
 
 @layer components {
+  /* Borderless floating card — the signature of the new system. */
   .card {
-    @apply bg-card border border-line rounded-[20px] p-4 relative;
-    box-shadow: 0 1px 2px rgba(20, 33, 29, .04), 0 18px 38px -26px rgba(var(--primary-dark-rgb), .45);
-    transition: transform .28s cubic-bezier(.2, .8, .2, 1), box-shadow .28s ease, border-color .28s ease;
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    pointer-events: none;
-    background: linear-gradient(140deg, rgba(var(--primary-rgb), .18), transparent 42%, rgba(var(--primary-rgb), .07));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    opacity: .8;
+    @apply bg-card rounded-[22px] p-4 relative;
+    border: 1px solid transparent;
+    box-shadow: 0 5px 20px -10px rgba(21, 29, 51, .28);
   }
   .card-tight {
-    @apply bg-card border border-line rounded-2xl p-3 relative;
-    box-shadow: 0 1px 2px rgba(20, 33, 29, .035), 0 12px 26px -20px rgba(var(--primary-dark-rgb), .35);
+    @apply bg-card rounded-[18px] p-3 relative;
+    border: 1px solid transparent;
+    box-shadow: 0 4px 14px -9px rgba(21, 29, 51, .26);
   }
-  .section-title {
-    @apply flex items-center justify-between display text-[14px] mt-6 mb-3;
-  }
-  .link { @apply text-[12px] font-semibold cursor-pointer; color: var(--primary-dark); }
-  .muted { color: var(--muted); }
-  .tiny { font-size: 11px; }
-  .small { font-size: 12px; }
-  .h-title { @apply display text-[20px]; }
+  /* Some legacy JSX adds border-line explicitly; keep the floating look. */
+  .card, .card-tight { border-color: transparent !important; }
 
+  .section-title {
+    @apply flex items-center justify-between display text-[13px] mt-6 mb-3;
+  }
+  .link { @apply text-[11px] font-bold cursor-pointer; color: var(--primary-dark); }
+  .muted { color: var(--muted); }
+  .tiny { font-size: 12px; }
+  .small { font-size: 13px; }
+  .h-title { @apply display text-[23px] leading-tight; }
+
+  .group-label {
+    @apply flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.16em] muted mb-2 px-1;
+  }
+  .group-label::before {
+    content: '';
+    width: 16px; height: 3px; border-radius: 99px;
+    background: var(--primary);
+    flex-shrink: 0;
+  }
+
+  /* Pill buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold active:scale-[.97] disabled:opacity-50;
-    transition: transform .2s cubic-bezier(.2, 1.3, .4, 1), box-shadow .24s ease, background-color .24s ease, border-color .24s ease;
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-[12px] font-bold active:scale-[.97] disabled:opacity-50;
+    transition: transform .2s cubic-bezier(.2, 1.3, .4, 1), box-shadow .24s ease, background-color .24s ease;
   }
   .btn-primary {
     @apply btn text-white;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    box-shadow: 0 10px 22px -12px rgba(var(--primary-rgb), .9), inset 0 1px 0 rgba(255, 255, 255, .18);
+    background: var(--primary);
+    box-shadow: 0 6px 16px -8px rgba(var(--primary-rgb), .95);
   }
   .btn-ghost {
-    @apply btn border border-line bg-card;
+    @apply btn;
+    background: var(--app-bg);
     color: var(--ink);
-    box-shadow: 0 6px 16px -14px rgba(20, 33, 29, .5);
   }
   .btn-soft {
     @apply btn;
@@ -185,45 +171,67 @@ button, input, select, textarea { font-family: inherit; }
   .btn-danger { @apply btn; background: var(--expense-soft); color: var(--expense); }
 
   .icon-btn {
-    @apply w-9 h-9 rounded-xl border border-line bg-card flex items-center justify-center cursor-pointer relative shrink-0;
+    @apply w-9 h-9 rounded-full flex items-center justify-center cursor-pointer relative shrink-0;
+    background: var(--app-bg);
     color: var(--ink);
-    transition: transform .22s cubic-bezier(.2, 1.3, .4, 1), border-color .22s ease, color .22s ease, box-shadow .22s ease;
+    transition: background-color .2s ease, color .2s ease;
   }
-  .icon-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px -12px rgba(var(--primary-rgb), .7);
+  .icon-btn:hover { background: var(--primary-soft); color: var(--primary-dark); }
+  .icon-btn:active { transform: scale(.96); }
+
+  /* Icon buttons that live on the deep-navy header. */
+  .shell-icon {
+    @apply w-9 h-9 rounded-full flex items-center justify-center cursor-pointer relative shrink-0 text-white;
+    background: rgba(255,255,255,.1);
+    transition: background-color .2s ease;
   }
-  .icon-btn:active { transform: scale(.94); }
+  .shell-icon:hover { background: rgba(255,255,255,.2); }
+  .shell-icon:active { transform: scale(.96); }
 
   .chip {
-    @apply text-[11px] font-semibold px-3 py-1.5 rounded-full border border-line bg-card whitespace-nowrap cursor-pointer;
+    @apply text-[11px] font-bold px-3.5 py-2 rounded-full whitespace-nowrap cursor-pointer;
+    background: var(--app-bg);
     color: var(--muted);
-    transition: transform .2s cubic-bezier(.2, 1.3, .4, 1), background-color .2s ease, color .2s ease, border-color .2s ease;
+    transition: background-color .2s ease, color .2s ease;
   }
-  .chip:hover { transform: translateY(-1px); border-color: rgba(var(--primary-rgb), .35); }
+  .chip:hover { color: var(--primary-dark); }
   .chip.on {
     @apply text-white;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border-color: var(--primary);
-    box-shadow: 0 8px 18px -12px rgba(var(--primary-rgb), .8);
+    background: var(--primary);
+    box-shadow: 0 5px 14px -8px rgba(var(--primary-rgb), .95);
   }
 
-  .pill { @apply text-[10px] font-bold px-2 py-1 rounded-lg; }
+  .pill { @apply text-[10px] font-extrabold px-2.5 py-1 rounded-full; }
   .pill-income { background: var(--income-soft); color: var(--income); }
   .pill-expense { background: var(--expense-soft); color: var(--expense); }
   .pill-transfer { background: #e9f0ff; color: var(--blue); }
   .dark .pill-transfer { background: #1b2e4a; color: #93c5fd; }
 
-  .field-label { @apply flex items-center gap-2 text-[12px] muted; }
+  /* Segmented control — reused on every page with a month/mode switch. */
+  .segment {
+    @apply flex items-center gap-1 rounded-full p-1;
+    background: var(--app-bg);
+  }
+  .seg {
+    @apply flex-1 text-[10px] font-extrabold px-2.5 py-1.5 rounded-full whitespace-nowrap transition;
+    color: var(--muted);
+  }
+  .seg.on {
+    @apply text-white;
+    background: var(--primary);
+    box-shadow: 0 4px 10px -6px rgba(var(--primary-rgb), .9);
+  }
+
+  .field-label { @apply flex items-center gap-2 text-[12px] font-semibold muted; }
   .input, .select {
-    @apply w-full rounded-xl border border-line bg-card px-3 py-2.5 text-[13px] outline-none transition;
+    @apply w-full rounded-[14px] border border-transparent px-3.5 py-2.5 text-[13px] outline-none transition;
+    background: var(--app-bg);
     color: var(--ink);
   }
   .input:focus, .select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .12);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .13);
+    background: var(--card);
   }
   .row { @apply flex items-center justify-between; }
   .scroll-none { scrollbar-width: none; }
@@ -231,87 +239,182 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 @media (hover: hover) {
-  .card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(var(--primary-rgb), .24);
-    box-shadow: 0 2px 4px rgba(20, 33, 29, .04), 0 24px 48px -28px rgba(var(--primary-dark-rgb), .55);
-  }
-  .btn-primary:hover,
-  .btn-soft:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 28px -12px rgba(var(--primary-rgb), .95);
-  }
-  .btn-ghost:hover { transform: translateY(-1px); }
-  .qbtn:hover {
-    transform: translateY(-3px);
-    border-color: rgba(var(--primary-rgb), .28);
-    box-shadow: 0 16px 30px -20px rgba(var(--primary-dark-rgb), .6);
-  }
+  .card:hover { box-shadow: 0 8px 20px -12px rgba(21, 29, 51, .3); }
+  .btn-ghost:hover, .chip:hover { background: var(--primary-soft); }
 }
 
-.balance-card {
-  background:
-    radial-gradient(120% 120% at 0% 0%, rgba(255, 255, 255, .2), transparent 46%),
-    linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 68%, rgba(var(--primary-dark-rgb), .92) 100%);
+/* Compact balance strip — a quiet summary, not a full-screen hero. */
+.balance-strip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 12px 16px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 14px -10px rgba(21, 29, 51, .22);
+}
+.balance-strip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--primary);
+}
+.balance-strip .balance-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Kept for any older layout that still references the surface. */
+.bank-hero {
+  background: var(--primary-dark);
   color: #fff;
-  border-radius: 22px;
+  border-radius: 24px;
   padding: 20px;
   position: relative;
   overflow: hidden;
-  isolation: isolate;
-  box-shadow: 0 20px 44px -22px rgba(var(--primary-rgb), .85), inset 0 1px 0 rgba(255, 255, 255, .16);
-}
-.balance-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(110deg, transparent 32%, rgba(255, 255, 255, .16) 50%, transparent 68%);
-  transform: translateX(-110%);
-  animation: cardSheen 7s ease-in-out infinite;
-}
-.balance-card::after {
-  content: '';
-  position: absolute;
-  width: 210px; height: 210px; border-radius: 50%;
-  background: rgba(255, 255, 255, .1);
-  right: -64px; top: -88px;
-  box-shadow: -150px 190px 0 -70px rgba(255, 255, 255, .08);
-  z-index: -1;
+  box-shadow: 0 10px 26px -14px rgba(var(--primary-dark-rgb), .95);
 }
 
-.tx-icon { @apply w-9 h-9 rounded-xl flex items-center justify-center shrink-0; }
+.tx-icon { @apply w-10 h-10 rounded-full flex items-center justify-center shrink-0; }
 .tx-icon svg { width: 17px; height: 17px; }
 
 .avatar {
-  @apply w-9 h-9 rounded-xl flex items-center justify-center display text-[13px];
-  background: var(--primary-soft); color: var(--primary-dark);
+  @apply w-9 h-9 rounded-full flex items-center justify-center display text-[12px];
+  background: rgba(255,255,255,.14);
+  color: #fff;
 }
 
 .qbtn {
-  @apply bg-card border border-line rounded-2xl py-3 px-1 items-center gap-2 cursor-pointer;
+  @apply bg-card rounded-[18px] py-3 px-1 items-center gap-2 cursor-pointer;
   display: flex; flex-direction: column;
-  transition: transform .24s cubic-bezier(.2, 1.35, .4, 1), border-color .24s ease, box-shadow .24s ease;
-  box-shadow: 0 8px 20px -18px rgba(20, 33, 29, .6);
+  border: 1px solid transparent;
+  box-shadow: 0 4px 14px -9px rgba(21, 29, 51, .26);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
-.qbtn:active { transform: scale(.95); }
-.qbtn .qi { @apply w-10 h-10 rounded-xl flex items-center justify-center; }
+.qbtn:active { transform: scale(.96); }
+.qbtn .qi { @apply w-10 h-10 rounded-full flex items-center justify-center; }
 .qbtn .qi svg { width: 19px; height: 19px; }
-.qbtn span { @apply text-[12px] font-semibold; }
+.qbtn span { @apply text-[11px] font-bold; }
+
+/* Floating dock — replaces the old full-width bottom bar. */
+.nav-dock {
+  @apply fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2;
+  padding-bottom: max(10px, var(--safe-area-inset-bottom, 0px));
+  padding-top: 6px;
+}
+.nav-dock-inner {
+  @apply flex items-center justify-around w-full rounded-[22px] px-1 py-1;
+  background: var(--shell);
+  box-shadow: 0 14px 34px -16px rgba(6, 11, 22, .95);
+  border: 1px solid rgba(255,255,255,.07);
+}
+.dock-item {
+  @apply relative flex flex-col items-center gap-0.5 w-1/5 py-1.5 rounded-[16px] transition-all duration-300;
+  color: rgba(255,255,255,.55);
+}
+.dock-item.on {
+  color: #fff;
+  background: var(--primary);
+  box-shadow: 0 6px 16px -8px rgba(var(--primary-rgb), .95);
+}
+.dock-item svg { transition: transform .3s ease; }
+.dock-item.on svg { transform: translateY(-1px) scale(1.08); }
+.dock-item span { @apply text-[9px] font-bold; }
+
+/* Profile chip on Home — edit profile is one tap away on mobile. */
+.profile-chip {
+  @apply flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-2.5 shrink-0 cursor-pointer transition;
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 5px 16px -10px rgba(21, 29, 51, .35);
+}
+.profile-chip:active { transform: scale(.96); }
+.profile-chip-avatar {
+  @apply w-7 h-7 rounded-full overflow-hidden flex items-center justify-center display text-[11px] text-white shrink-0;
+  background: var(--primary);
+}
+
+/* Radial quick actions at the floating dock. */
+.fab-veil {
+  @apply fixed inset-0 z-[35] bg-black/30;
+  border: 0;
+}
+.fab-cluster {
+  position: fixed;
+  right: 20px;
+  z-index: 45;
+  width: 56px;
+  height: 56px;
+}
+.fab-main {
+  @apply w-14 h-14 rounded-full flex items-center justify-center text-white;
+  background: var(--primary);
+  box-shadow: 0 14px 30px -10px rgba(var(--primary-rgb), .95);
+  transition: background-color .22s ease, transform .22s ease;
+}
+.fab-main:active { transform: scale(.94); }
+.fab-main.open {
+  background: var(--shell);
+  box-shadow: 0 14px 30px -10px rgba(6, 11, 22, .95);
+}
+.fab-options {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 44px;
+  height: 44px;
+}
+.fab-option {
+  @apply absolute right-0 bottom-0 w-11 h-11 rounded-full flex items-center justify-center text-white;
+  box-shadow: 0 10px 22px -8px rgba(6, 11, 22, .65);
+  animation: fabIn .24s cubic-bezier(.16, 1, .3, 1) both;
+}
+.fab-option:active { filter: brightness(1.12); }
+.fab-option-label {
+  @apply absolute right-[52px] top-1/2 -translate-y-1/2 text-[10px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap;
+  background: var(--shell);
+  color: #fff;
+  box-shadow: 0 6px 14px -8px rgba(6, 11, 22, .9);
+}
+.qa-1 { transform: translate(-104px, -12px); animation-delay: .01s; }
+.qa-2 { transform: translate(-80px, -62px); animation-delay: .035s; }
+.qa-3 { transform: translate(-44px, -106px); animation-delay: .06s; }
+.qa-4 { transform: translate(0px, -140px); animation-delay: .085s; }
+@keyframes fabIn { from { opacity: 0; margin-bottom: 10px; margin-right: 10px; } to { opacity: 1; margin-bottom: 0; margin-right: 0; } }
+
+/* Transaction amount calculator. */
+.calc-input { letter-spacing: -.02em; }
+.amount-preview {
+  @apply inline-block mt-1 px-3 py-1 rounded-full text-[12px] font-extrabold;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.calc-key {
+  @apply w-9 h-9 rounded-full text-[13px] font-extrabold active:scale-95 transition;
+  background: var(--app-bg);
+  color: var(--ink);
+}
+.calc-clear {
+  background: var(--expense-soft);
+  color: var(--expense);
+}
 
 /* Motion system — transform/opacity only so it stays smooth on phones */
-@keyframes ambientDrift {
-  from { transform: translate3d(-1.5%, -1%, 0) scale(1); }
-  to { transform: translate3d(1.5%, 1.5%, 0) scale(1.06); }
-}
-@keyframes cardSheen {
-  0%, 55% { transform: translateX(-110%); }
-  85%, 100% { transform: translateX(110%); }
-}
 @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes riseIn { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
-@keyframes pageIn { from { opacity: 0; transform: translateY(10px) scale(.993); } to { opacity: 1; transform: none; } }
-@keyframes slideUp { from { transform: translateY(46px) scale(.985); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pageIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes slideUp { from { transform: translateY(28px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes popIn { 0% { transform: scale(.86); opacity: 0; } 70% { transform: scale(1.025); opacity: 1; } 100% { transform: scale(1); } }
 @keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes veilIn { from { opacity: 0; } to { opacity: 1; } }
@@ -319,49 +422,34 @@ button, input, select, textarea { font-family: inherit; }
 @keyframes confettiFall { 0% { transform: translateY(-20px) rotate(0); opacity: 1; } 100% { transform: translateY(105vh) rotate(720deg); opacity: 0; } }
 @keyframes notifSlide { 0% { transform: translateY(-160%); opacity: 0; } 10%,85% { transform: none; opacity: 1; } 100% { transform: translateY(-160%); opacity: 0; } }
 @keyframes pulseRing { 0% { transform: scale(.9); opacity: .55; } 70%, 100% { transform: scale(1.35); opacity: 0; } }
-@keyframes orbFloat { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(26px, -20px, 0) scale(1.12); } }
 
 .onboarding-shell {
   position: relative;
-  background:
-    radial-gradient(60% 46% at 10% 6%, rgba(255, 255, 255, .2), transparent 70%),
-    linear-gradient(160deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(165deg, var(--shell) 0%, var(--shell-2) 58%, var(--primary-dark) 140%);
 }
 .onboarding-shell::before,
-.onboarding-shell::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  background: rgba(255, 255, 255, .09);
-  animation: orbFloat 16s ease-in-out infinite alternate;
-}
-.onboarding-shell::before { width: 320px; height: 320px; top: -110px; right: -90px; }
-.onboarding-shell::after { width: 380px; height: 380px; bottom: -150px; left: -110px; animation-delay: -8s; }
+.onboarding-shell::after { content: none; }
 
-.boot-shell {
-  background:
-    radial-gradient(70% 60% at 50% 0%, rgba(255, 255, 255, .18), transparent 70%),
-    linear-gradient(150deg, var(--primary), var(--primary-dark));
-}
+.boot-shell { background: var(--shell); }
+.shell-text { color: #fff; }
 
-.animate-fade { animation: fadeUp .32s cubic-bezier(.16, 1, .3, 1) both; }
-.animate-page { animation: pageIn .42s cubic-bezier(.16, 1, .3, 1) both; }
-.animate-sheet { animation: slideUp .38s cubic-bezier(.16, 1, .3, 1) both; }
-.animate-pop { animation: popIn .42s cubic-bezier(.2, 1.2, .35, 1) both; }
-.animate-drop { animation: dropIn .26s cubic-bezier(.2, 1.2, .4, 1) both; transform-origin: top right; }
-.animate-veil { animation: veilIn .25s ease both; }
-.animate-toast { animation: toastIn .34s cubic-bezier(.16, 1, .3, 1) both; }
+.animate-fade { animation: fadeUp .18s ease-out both; }
+.animate-page { animation: pageIn .2s ease-out both; }
+.animate-sheet { animation: slideUp .24s ease-out both; }
+.animate-pop { animation: popIn .26s cubic-bezier(.2, 1.2, .35, 1) both; }
+.animate-drop { animation: dropIn .18s ease-out both; transform-origin: top right; }
+.animate-veil { animation: veilIn .16s ease both; }
+.animate-toast { animation: toastIn .22s ease-out both; }
 .animate-notif { animation: notifSlide 5s ease forwards; }
 .boot-ring { animation: pulseRing 1.9s ease-out infinite; }
 
-.stagger > * { animation: riseIn .46s cubic-bezier(.16, 1, .3, 1) both; }
-.stagger > *:nth-child(1) { animation-delay: .03s; }
-.stagger > *:nth-child(2) { animation-delay: .07s; }
-.stagger > *:nth-child(3) { animation-delay: .11s; }
-.stagger > *:nth-child(4) { animation-delay: .15s; }
-.stagger > *:nth-child(5) { animation-delay: .19s; }
-.stagger > *:nth-child(6) { animation-delay: .23s; }
+.stagger > * { animation: riseIn .24s ease-out both; }
+.stagger > *:nth-child(1) { animation-delay: .01s; }
+.stagger > *:nth-child(2) { animation-delay: .025s; }
+.stagger > *:nth-child(3) { animation-delay: .04s; }
+.stagger > *:nth-child(4) { animation-delay: .055s; }
+.stagger > *:nth-child(5) { animation-delay: .07s; }
+.stagger > *:nth-child(6) { animation-delay: .085s; }
 
 .confetti { position: fixed; top: -20px; z-index: 90; border-radius: 2px; animation: confettiFall 2s linear forwards; }
 
@@ -375,4 +463,4 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 /* Recharts tweaks */
-.recharts-default-tooltip { border-radius: 12px !important; font-family: 'Hind Siliguri', sans-serif !important; }
+.recharts-default-tooltip { border-radius: 14px !important; font-family: 'Plus Jakarta Sans', sans-serif !important; }

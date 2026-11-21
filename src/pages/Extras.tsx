@@ -46,7 +46,7 @@ export function BudgetPage() {
           <ProgressBar spent={spent} amount={overall.amount} />
         </div>
       ) : (
-        <div className="mt-3"><EmptyState text="No overall monthly budget yet. Add one to track your limit." icon="🎯" /></div>
+        <div className="mt-3"><EmptyState text="No overall monthly budget yet. Add one to track your limit." icon={<Target size={24} color="var(--primary-dark)" />} /></div>
       )}
 
       <SectionTitle title="Category Budgets" />
@@ -167,7 +167,7 @@ export function CalendarPage({ onEdit, onDelete }: { onEdit: (t: Transaction) =>
       {selected && (
         <div className="mt-2">
           <SectionTitle title={dayLabel(selected)} action="Clear" onAction={() => setSelected(null)} />
-          {selectedTx.length ? <TxDayGroups items={selectedTx} onEdit={onEdit} onDelete={onDelete} /> : <EmptyState text="No transactions on this day." icon="📅" />}
+          {selectedTx.length ? <TxDayGroups items={selectedTx} onEdit={onEdit} onDelete={onDelete} /> : <EmptyState text="No transactions on this day." icon={<CalendarDays size={24} color="var(--primary-dark)" />} />}
         </div>
       )}
 
@@ -195,20 +195,20 @@ export function CategoriesPage() {
     <div className="animate-fade">
       <PageHeader title="Categories" subtitle="Organise your income and expenses"
         right={<button className="btn-soft !py-2 !px-3 !text-[12px]" onClick={() => open()}><Plus size={15} /> Add</button>} />
-      <div className="flex bg-appbg rounded-xl p-1 mt-4">
+      <div className="segment mt-4">
         {(['expense', 'income'] as const).map((x) => (
-          <button key={x} onClick={() => setTab(x)} className={`flex-1 text-[11px] font-bold py-2 rounded-lg capitalize ${tab === x ? 'bg-card shadow-sm' : 'muted'}`}>{x}</button>
+          <button key={x} onClick={() => setTab(x)} className={`seg capitalize ${tab === x ? 'on' : ''}`}>{x}</button>
         ))}
       </div>
       <div className="grid grid-cols-2 gap-2 mt-3">
         {list.length === 0 && (
           <div className="col-span-2">
-            <EmptyState icon="🏷️" text={`No ${tab} categories yet. Add only the ones you actually use.`} />
+            <EmptyState icon={<Tags size={24} color="var(--primary-dark)" />} text={`No ${tab} categories yet. Add only the ones you actually use.`} />
           </div>
         )}
         {list.map((c) => (
           <div key={c.id} className="card !p-3 flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${c.color}22`, color: c.color }}><Tags size={16} /></span>
+            <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: `${c.color}22`, color: c.color }}><Tags size={16} /></span>
             <div className="flex-1 min-w-0"><div className="text-[12px] font-semibold truncate">{c.name}</div><div className="tiny muted">{c.type}</div></div>
             <button className="icon-btn !w-6 !h-6 !rounded-md" onClick={() => open(c)}><Pencil size={11} /></button>
             <button className="icon-btn !w-6 !h-6 !rounded-md" onClick={() => setDel(c)}><Trash2 size={11} /></button>
@@ -266,7 +266,7 @@ export function RecurringPage() {
           const days = daysUntil(r.nextDate);
           return (
             <div key={r.id} className="flex items-center gap-2.5 py-3 border-b border-line last:border-0">
-              <span className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: r.type === 'income' ? 'var(--income-soft)' : 'var(--expense-soft)', color: r.type === 'income' ? 'var(--income)' : 'var(--expense)' }}><Repeat size={16} /></span>
+              <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: r.type === 'income' ? 'var(--income-soft)' : 'var(--expense-soft)', color: r.type === 'income' ? 'var(--income)' : 'var(--expense)' }}><Repeat size={16} /></span>
               <div className="flex-1 min-w-0">
                 <div className="text-[12px] font-semibold truncate">{r.note || cat?.name || 'Recurring entry'}</div>
                 <div className="tiny muted capitalize">{r.frequency} · {a?.name || '—'} · next {r.nextDate} <span style={{ color: days <= 0 ? 'var(--expense)' : 'var(--muted)' }}>({days <= 0 ? 'due' : `${days}d`})</span></div>

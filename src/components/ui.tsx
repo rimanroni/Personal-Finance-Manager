@@ -33,8 +33,11 @@ export function PageHeader({ title, subtitle, right }: { title: string; subtitle
   return (
     <div className="row mb-1 pt-1">
       <div>
-        <div className="h-title">{title}</div>
-        {subtitle && <div className="tiny muted">{subtitle}</div>}
+        <div className="flex items-center gap-2">
+          <span className="w-1 h-6 rounded-full" style={{ background: 'var(--primary)' }} />
+          <div className="h-title">{title}</div>
+        </div>
+        {subtitle && <div className="tiny muted mt-1 pl-3">{subtitle}</div>}
       </div>
       {right}
     </div>
@@ -78,7 +81,8 @@ export function EmptyState({ text, icon, actionLabel, onAction }: {
 }) {
   return (
     <div className="card text-center py-8">
-      <div className="text-3xl mb-2">{icon || '📭'}</div>
+      <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl"
+        style={{ background: 'var(--primary-soft)' }}>{icon || <Wallet size={24} color="var(--primary-dark)" />}</div>
       <div className="small muted px-4">{text}</div>
       {actionLabel && onAction && <button className="btn-primary !py-2 !px-4 !text-[11px] mt-4" onClick={onAction}>{actionLabel}</button>}
     </div>
@@ -88,12 +92,12 @@ export function EmptyState({ text, icon, actionLabel, onAction }: {
 export function MonthSwitcher() {
   const { month, setMonth, lang } = useData();
   return (
-    <div className="flex items-center gap-2 mt-4">
-      <button className="icon-btn !w-7 !h-7 !rounded-lg" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month">
+    <div className="flex items-center gap-2 mt-4 bg-card rounded-full p-1.5 shadow-[0_5px_20px_-10px_rgba(21,29,51,.28)]">
+      <button className="icon-btn !w-8 !h-8" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month">
         <ChevronLeft size={15} />
       </button>
-      <div className="flex-1 text-center display text-[13px]">{monthName(month, lang)}</div>
-      <button className="icon-btn !w-7 !h-7 !rounded-lg" onClick={() => setMonth(shiftMonth(month, 1))} aria-label="Next month">
+      <div className="flex-1 text-center display text-[12px]">{monthName(month, lang)}</div>
+      <button className="icon-btn !w-8 !h-8" onClick={() => setMonth(shiftMonth(month, 1))} aria-label="Next month">
         <ChevronRight size={15} />
       </button>
     </div>
@@ -103,9 +107,9 @@ export function MonthSwitcher() {
 export function Stat({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'income' | 'expense' | 'primary' }) {
   const color = tone === 'income' ? 'var(--income)' : tone === 'expense' ? 'var(--expense)' : tone === 'primary' ? 'var(--primary-dark)' : undefined;
   return (
-    <div className="card-tight flex-1">
-      <div className="tiny muted">{label}</div>
-      <div className="num text-[15px] mt-1" style={{ color }}>{value}</div>
+    <div className="card-tight flex-1 !p-3.5">
+      <div className="tiny muted font-semibold">{label}</div>
+      <div className="num text-[17px] mt-1" style={{ color }}>{value}</div>
     </div>
   );
 }
@@ -158,11 +162,14 @@ export function CategoryLegend({ data }: { data: { name: string; value: number; 
 export function Modal({ open, title, onClose, children, footer }: { open: boolean; title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/45 backdrop-blur-sm animate-veil" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-full sm:max-w-md bg-card rounded-t-[24px] sm:rounded-[24px] p-5 max-h-[90vh] overflow-y-auto animate-sheet relative shadow-2xl">
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/55 animate-veil" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-full sm:max-w-md bg-card rounded-t-[26px] sm:rounded-[26px] p-5 max-h-[90vh] overflow-y-auto animate-sheet relative shadow-2xl">
         <div className="w-10 h-1 rounded-full bg-line mx-auto mb-3 sm:hidden" />
-        <button className="icon-btn !w-7 !h-7 !rounded-lg absolute top-4 right-4" onClick={onClose} aria-label="Close"><X size={14} /></button>
-        <h3 className="display text-[18px] mb-3">{title}</h3>
+        <button className="icon-btn !w-8 !h-8 absolute top-4 right-4" onClick={onClose} aria-label="Close"><X size={14} /></button>
+        <div className="flex items-center gap-2 mb-3 pr-8">
+          <span className="w-1 h-5 rounded-full" style={{ background: 'var(--primary)' }} />
+          <h3 className="display text-[18px]">{title}</h3>
+        </div>
         {children}
         {footer && <div className="mt-4 flex gap-2">{footer}</div>}
       </div>
@@ -175,10 +182,10 @@ export function ConfirmDialog({ open, title, message, confirmLabel = 'Delete', o
 }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-veil p-6">
-      <div className="bg-card rounded-[20px] p-5 w-full max-w-sm text-center animate-pop">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center mx-auto" style={{ background: 'var(--expense-soft)', color: 'var(--expense)' }}>
-          <AlertTriangle size={21} />
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 animate-veil p-6">
+      <div className="bg-card rounded-[26px] p-5 w-full max-w-sm text-center animate-pop">
+        <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto" style={{ background: 'var(--expense-soft)', color: 'var(--expense)' }}>
+          <AlertTriangle size={22} />
         </div>
         <h3 className="display text-[16px] mt-3">{title}</h3>
         <p className="tiny muted mt-2 leading-relaxed">{message}</p>
@@ -195,8 +202,8 @@ export function Toast() {
   const { toast } = useData();
   if (!toast) return null;
   return (
-    <div key={toast.id} className="fixed bottom-24 left-1/2 z-[110] px-4 py-2.5 rounded-full text-[11px] font-semibold text-white shadow-xl max-w-[88vw] truncate animate-toast"
-      style={{ background: 'var(--ink)' }}>
+    <div key={toast.id} className="fixed bottom-28 lg:bottom-8 left-1/2 z-[110] px-5 py-3 rounded-full text-[11px] font-bold text-white shadow-xl max-w-[88vw] truncate animate-toast"
+      style={{ background: 'var(--shell)' }}>
       {toast.msg}
     </div>
   );
@@ -222,8 +229,9 @@ export function Celebration() {
       {pieces.map((p, i) => (
         <span key={i} className="confetti" style={{ left: `${p.left}%`, background: p.color, width: p.w, height: p.w * 1.7, animationDelay: `${p.delay}s` }} />
       ))}
-      <div className="bg-card rounded-[24px] p-6 text-center w-full max-w-xs relative animate-pop">
-        <div className="text-5xl">{inc ? '🎉' : '✅'}</div>
+      <div className="bg-card rounded-[26px] p-6 text-center w-full max-w-xs relative animate-pop">
+        <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-3xl"
+          style={{ background: inc ? 'var(--income-soft)' : 'var(--primary-soft)' }}>{inc ? '🎉' : '✅'}</div>
         <h2 className="display text-[20px] mt-2">{inc ? t('congratulations') : 'Saved Successfully!'}</h2>
         <p className="tiny muted mt-2">{inc ? t('incomeSaved') : 'Entry saved on this device. Totals recalculated.'}</p>
         <div className="num text-[30px] mt-3" style={{ color: inc ? 'var(--income)' : 'var(--primary-dark)' }}>

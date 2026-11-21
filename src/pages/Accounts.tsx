@@ -5,11 +5,14 @@ import { useData } from '../context/DataContext';
 import { totals } from '../lib/finance';
 import { money, daysUntil } from '../lib/format';
 import { ConfirmDialog, Modal, PageHeader, SectionTitle } from '../components/ui';
+import type { PageId } from '../components/Layout';
+import { localize } from '../lib/i18n';
 
 const TYPES = ['Bank', 'bKash', 'Nagad', 'Rocket', 'Cash', 'Savings', 'Other'];
 
-export function Accounts({ onNavigate }: { onNavigate: (p: 'settings') => void }) {
-  const { accounts, transactions, notes, saveAccount, deleteAccount, saveNote, deleteNote, showToast } = useData();
+export function Accounts({ onNavigate }: { onNavigate: (p: PageId) => void }) {
+  const { accounts, transactions, notes, saveAccount, deleteAccount, saveNote, deleteNote, showToast, lang } = useData();
+  const tx = (s: string) => localize(lang, s);
   const [accModal, setAccModal] = useState<{ open: boolean; edit?: Account }>({ open: false });
   const [noteModal, setNoteModal] = useState<{ open: boolean; edit?: Note }>({ open: false });
   const [delAcc, setDelAcc] = useState<Account | null>(null);
@@ -40,48 +43,47 @@ export function Accounts({ onNavigate }: { onNavigate: (p: 'settings') => void }
   return (
     <div className="animate-fade">
       <PageHeader title="Accounts" subtitle="bKash, Nagad, Bank — alada alada hisab"
-        right={<button className="btn-soft !py-2 !px-3 !text-[12px]" onClick={() => openAccount()}><Plus size={15} /> Add</button>} />
-
-      <div className="balance-card mt-3">
-        <div className="text-[10px] font-bold tracking-[.12em] uppercase opacity-85 display">Total Across Accounts</div>
-        <div className="num text-[31px] mt-1">{money(lifetime.balance)}</div>
-        <div className="flex gap-6 mt-4 relative z-10">
-          <div><div className="num text-[13px]">{money(lifetime.income, true)}</div><div className="text-[10px] opacity-85">Money In</div></div>
-          <div><div className="num text-[13px]">{money(lifetime.expense, true)}</div><div className="text-[10px] opacity-85">Money Out</div></div>
-        </div>
-      </div>
+        right={<button className="btn-soft !py-2 !px-3.5" onClick={() => openAccount()}><Plus size={15} /> Add</button>} />
 
       <SectionTitle title="All Accounts" action="+ Add" onAction={() => openAccount()} />
-      <div className="card !py-1">
-        {accounts.length === 0 && (
-          <div className="text-center py-7 px-4">
-            <div className="text-3xl">🌱</div>
-            <div className="small muted mt-2">No accounts yet. Add bKash, Nagad, Bank or Cash — only your own entries live here.</div>
-            <button className="btn-primary !py-2 !px-4 !text-[11px] mt-3" onClick={() => openAccount()}>Add first account</button>
+      {accounts.length === 0 ? (
+        <div className="card text-center py-8">
+          <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}>
+            <Wallet size={24} />
           </div>
-        )}
-        {accounts.map((a) => {
-          const s = lifetime.stats[a.id] || { balance: 0, in: 0, out: 0 };
-          return (
-            <div key={a.id} className="flex items-center gap-2.5 py-3 border-b border-line last:border-0">
-              <span className="w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0" style={{ background: a.color }}>{a.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[12px] font-semibold truncate">{a.name} <span className="pill !py-0 !px-1.5 ml-1" style={{ background: 'var(--app-bg)' }}>{a.type}</span></div>
-                <div className="tiny muted">Opening {money(a.openingBalance)}</div>
+          <div className="small muted px-4">No accounts yet. Add bKash, Nagad, Bank or Cash — only your own entries live here.</div>
+          <button className="btn-primary !py-2 !px-4 !text-[11px] mt-4" onClick={() => openAccount()}>Add first account</button>
+        </div>
+      ) : (
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {accounts.map((a) => {
+            const s = lifetime.stats[a.id] || { balance: 0, in: 0, out: 0 };
+            return (
+              <div key={a.id} className="card !p-4">
+                <div className="flex items-start gap-3">
+                  <span className="w-11 h-11 rounded-full flex items-center justify-center text-lg shrink-0" style={{ background: a.color }}>{a.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-extrabold truncate">{a.name}</div>
+                    <span className="pill !text-[9px] mt-0.5 inline-block" style={{ background: 'var(--app-bg)' }}>{a.type}</span>
+                  </div>
+                  <div className="flex gap-1">
+                    <button className="icon-btn !w-7 !h-7" onClick={() => openAccount(a)} title="Edit"><Pencil size={12} /></button>
+                    <button className="icon-btn !w-7 !h-7" onClick={() => setDelAcc(a)} title="Delete"><Trash2 size={12} /></button>
+                  </div>
+                </div>
+                <div className="num text-[20px] mt-3">{money(s.balance)}</div>
+                <div className="flex items-center justify-between mt-1.5 pt-2.5 border-t border-line text-[10px] num">
+                  <span>Opening {money(a.openingBalance, true)}</span>
+                  <span><span style={{ color: 'var(--income)' }}>+{money(s.in, true)}</span> · <span style={{ color: 'var(--expense)' }}>−{money(s.out, true)}</span></span>
+                </div>
               </div>
-              <div className="text-right shrink-0">
-                <div className="num text-[14px]">{money(s.balance)}</div>
-                <div className="tiny num"><span style={{ color: 'var(--income)' }}>+{money(s.in, true)}</span> · <span style={{ color: 'var(--expense)' }}>−{money(s.out, true)}</span></div>
-              </div>
-              <button className="icon-btn !w-7 !h-7 !rounded-lg" onClick={() => openAccount(a)} title="Edit"><Pencil size={12} /></button>
-              <button className="icon-btn !w-7 !h-7 !rounded-lg" onClick={() => setDelAcc(a)} title="Delete"><Trash2 size={12} /></button>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="card mt-3">
-        <div className="small font-semibold mb-2">Supported account types</div>
+        <div className="small font-extrabold mb-2">Supported account types</div>
         <div className="flex flex-wrap gap-1.5">
           {TYPES.map((type) => <span key={type} className="chip !cursor-default">{type}</span>)}
         </div>
@@ -96,21 +98,21 @@ export function Accounts({ onNavigate }: { onNavigate: (p: 'settings') => void }
           const due = n.reminderDate ? daysUntil(n.reminderDate) : null;
           return (
             <div key={n.id} className="flex items-start gap-2.5 py-2.5 border-b border-line last:border-0">
-              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><StickyNote size={15} /></span>
+              <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><StickyNote size={15} /></span>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-bold">{acc ? `${acc.icon} ${acc.name}` : 'General note'} {due !== null && <span className="pill ml-1" style={{ background: due <= 0 ? 'var(--expense-soft)' : 'var(--primary-soft)', color: due <= 0 ? 'var(--expense)' : 'var(--primary-dark)' }}>{due <= 0 ? 'Due' : `in ${due}d`}</span>}</div>
+                <div className="text-[11px] font-extrabold">{acc ? `${acc.icon} ${acc.name}` : 'General note'} {due !== null && <span className="pill ml-1" style={{ background: due <= 0 ? 'var(--expense-soft)' : 'var(--primary-soft)', color: due <= 0 ? 'var(--expense)' : 'var(--primary-dark)' }}>{due <= 0 ? 'Due' : `in ${due}d`}</span>}</div>
                 <div className="text-[11px] muted mt-1 leading-snug">{n.text}</div>
               </div>
               {n.reminderDate && <Bell size={13} className="muted mt-1 shrink-0" />}
-              <button className="icon-btn !w-6 !h-6 !rounded-md" onClick={() => openNote(n)}><Pencil size={11} /></button>
-              <button className="icon-btn !w-6 !h-6 !rounded-md" onClick={() => setDelNote(n)}><Trash2 size={11} /></button>
+              <button className="icon-btn !w-7 !h-7" onClick={() => openNote(n)}><Pencil size={11} /></button>
+              <button className="icon-btn !w-7 !h-7" onClick={() => setDelNote(n)}><Trash2 size={11} /></button>
             </div>
           );
         })}
-        <div className="tiny muted text-center mt-2">Notes stay on this device. Set a reminder date to get a phone notification.</div>
+        <div className="tiny muted text-center mt-2">{tx('Set a reminder date to get a phone notification.')}</div>
       </div>
 
-      <button className="link text-[11px] mt-4 flex items-center gap-1" onClick={() => onNavigate('settings')}><Wallet size={13} /> Data, backup & security</button>
+      <button className="link text-[11px] mt-4 flex items-center gap-1" onClick={() => onNavigate('allSettings')}><Wallet size={13} /> Data, backup & security</button>
 
       {/* Account modal */}
       <Modal open={accModal.open} title={accModal.edit ? 'Edit Account' : 'Add Account'} onClose={() => setAccModal({ open: false })}

@@ -41,9 +41,9 @@ export function Reports() {
     <div className="animate-fade">
       <PageHeader title="Reports" subtitle="Follow the money — in, out and where it went"
         right={
-          <div className="flex bg-appbg rounded-xl p-1">
+          <div className="segment">
             {(['Monthly', 'Yearly', 'Custom'] as Mode[]).map((m) => (
-              <button key={m} onClick={() => setMode(m)} className={`text-[10px] font-bold px-2 py-1.5 rounded-lg ${mode === m ? 'bg-card shadow-sm' : 'muted'}`}>{m}</button>
+              <button key={m} onClick={() => setMode(m)} className={`seg ${mode === m ? 'on' : ''}`}>{m}</button>
             ))}
           </div>
         } />

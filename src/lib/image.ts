@@ -1,5 +1,10 @@
+import { ensurePhotoPermission } from './permissions';
+
 /** Reads an image file and downscales it to a compact JPEG data URL for local storage. */
 export async function shrinkImage(file: File, max = 900, quality = 0.72): Promise<string> {
+  // On Android 13+ gallery access needs a runtime grant. The system picker also
+  // works with partial access, so a denial simply falls through to the picker.
+  await ensurePhotoPermission();
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result));

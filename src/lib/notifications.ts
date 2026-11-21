@@ -1,4 +1,5 @@
 import { todayISO } from './format';
+import { isNative, requestNotificationPermissionNative } from './permissions';
 
 export interface ReminderInput {
   id: string;
@@ -9,6 +10,12 @@ export interface ReminderInput {
 }
 
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  // Android requires POST_NOTIFICATIONS at runtime; the WebView's own
+  // Notification permission is separate and is not enough on target SDK 36.
+  if (isNative()) {
+    const { granted } = await requestNotificationPermissionNative();
+    return granted ? 'granted' : 'denied';
+  }
   if (!('Notification' in window)) return 'denied';
   if (Notification.permission === 'granted') return 'granted';
   return await Notification.requestPermission();

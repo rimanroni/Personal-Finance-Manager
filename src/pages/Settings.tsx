@@ -7,13 +7,18 @@ import {
 import type { BackupMeta } from '../types';
 import { useData, THEMES } from '../context/DataContext';
 import { buildSnapshot, sealSnapshot } from '../lib/backup';
-import { shrinkImage } from '../lib/image';
 import { isGoogleSignInConfigured } from '../lib/googleConfig';
 import * as drive from '../lib/drive';
 import type { PageId } from '../components/Layout';
-import { ConfirmDialog, Modal, PageHeader, SectionTitle } from '../components/ui';
+import { ConfirmDialog, Modal, PageHeader } from '../components/ui';
 import { DevFooter } from '../components/Layout';
+import { PrivacyPolicyModal } from '../components/PrivacyPolicyModal';
+import { ProfileModal } from '../components/ProfileModal';
 import { localize } from '../lib/i18n';
+import {
+  getPermissionState, isNative, openAppPermissionSettings,
+  requestPhotoPermissionNative, type PermissionState,
+} from '../lib/permissions';
 
 type PassModalState =
   | { mode: 'restore'; name: string; text: string; driveId?: string }
@@ -40,8 +45,6 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
   const tx = (s: string) => localize(lang, s);
 
   const [profileOpen, setProfileOpen] = useState(false);
-  const [nameDraft, setNameDraft] = useState(settings.profileName);
-  const [photoDraft, setPhotoDraft] = useState<string | undefined>(settings.profilePhoto);
   const [passModal, setPassModal] = useState<PassModalState | null>(null);
   const [pass, setPass] = useState('');
   const [exportEncrypted, setExportEncrypted] = useState(true);
@@ -50,15 +53,22 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
   const [listing, setListing] = useState(false);
   const [driveFiles, setDriveFiles] = useState<drive.DriveFile[]>([]);
   const [resetOpen, setResetOpen] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [perms, setPerms] = useState<PermissionState>({ notification: 'prompt', photos: 'prompt', androidVersion: 0 });
 
   useEffect(() => {
     let alive = true;
     isGoogleSignInConfigured().then((ready) => { if (alive) setGoogleReady(ready); });
     return () => { alive = false; };
   }, []);
-  useEffect(() => { setNameDraft(settings.profileName); setPhotoDraft(settings.profilePhoto); }, [settings.profileName, settings.profilePhoto]);
 
+  useEffect(() => {
+    let alive = true;
+    getPermissionState().then((state) => { if (alive) setPerms(state); });
+    return () => { alive = false; };
+  }, []);
   const snapshot = useMemo(() => buildSnapshot({
     accounts, categories, transactions, notes, budgets, recurring,
     settings: [settings], backups,
@@ -111,6 +121,29 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
     showToast('Disconnected from Google');
   };
 
+  /** Play Store account-data deletion: unlink Google and remove Drive backups. */
+  const deleteGoogleAccountData = async () => {
+    try {
+      setBusy(true);
+      if (connected) {
+        try {
+          const files = await drive.listBackups();
+          await Promise.all(files.map((f) => drive.deleteBackup(f.id).catch(() => undefined)));
+        } catch (_) {
+          /* token may already be expired; local account data is still removed */
+        }
+      }
+      drive.disconnect();
+      await Promise.all(backups.filter((b) => b.driveId).map((b) => deleteBackupMeta(b.id)));
+      await updateSettings({ googleName: '', googleEmail: '', googlePhoto: '' });
+      setConnected(false);
+      setDriveFiles([]);
+      showToast(lang === 'bn' ? 'Google অ্যাকাউন্ট ডেটা মুছে ফেলা হয়েছে' : 'Google account data removed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const listDriveBackups = async (notify = true) => {
     try {
       setListing(true);
@@ -120,6 +153,34 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
     } catch (e) {
       handleDriveError(e, 'Could not list Drive backups');
     } finally { setListing(false); }
+  };
+
+  const refreshPerms = async () => setPerms(await getPermissionState());
+
+  const handlePhotoPermission = async () => {
+    if (!isNative()) {
+      showToast(tx('Photos use the system picker on this device'));
+      return;
+    }
+    const result = await requestPhotoPermissionNative();
+    await refreshPerms();
+    if (result.granted) showToast(tx('Photo access allowed'));
+    else if (result.permanentDenied) {
+      showToast(tx('Allow photos in system settings'));
+      await openAppPermissionSettings();
+    } else showToast(tx('Photo access not allowed'));
+  };
+
+  const handleNotificationPermission = async () => {
+    if (settings.notificationsEnabled) {
+      await updateSettings({ notificationsEnabled: false });
+      showToast(tx('Notifications off'));
+    } else {
+      const ok = await enableNotifications();
+      if (ok) showToast(tx('Notification access allowed'));
+      else showToast(tx('Allow notifications in system settings'));
+    }
+    await refreshPerms();
   };
 
   const doUpload = async (passphrase: string) => {
@@ -150,17 +211,17 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
   return (
     <div className="animate-fade pb-6">
-      <PageHeader title={tx('Settings')} subtitle={tx('Your data stays on this device')} />
+      <PageHeader title={tx('Settings')} subtitle={tx('Preferences & backup')} />
 
       {/* Profile */}
       <div className="card mt-3 flex items-center gap-3">
-        <button className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center display text-[15px] text-white"
+        <button className="w-12 h-12 rounded-full overflow-hidden shrink-0 flex items-center justify-center display text-[15px] text-white"
           style={{ background: 'var(--primary)' }} onClick={() => setProfileOpen(true)}>
           {settings.profilePhoto ? <img src={settings.profilePhoto} alt="Profile" className="w-full h-full object-cover" /> : initials}
         </button>
         <div className="flex-1 min-w-0">
           <div className="display text-[13px] truncate">{settings.profileName || tx('Your name')}</div>
-          <div className="tiny muted truncate">{settings.googleEmail || tx('Local data · No account needed')}</div>
+          <div className="tiny muted truncate">{settings.googleEmail || tx('Name & photo')}</div>
         </div>
         <button className="icon-btn !w-8 !h-8 !rounded-xl" onClick={() => setProfileOpen(true)} title={tx('Change name / photo')}><Pencil size={14} /></button>
       </div>
@@ -172,12 +233,12 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Google account */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Google Account')}</div>
+        <div className="group-label">{tx('Google Account')}</div>
         <div className="card">
           {connected ? (
             <>
               <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-appbg flex items-center justify-center">
+                <span className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-app-bg flex items-center justify-center">
                   {settings.googlePhoto ? <img src={settings.googlePhoto} alt="Google profile" className="w-full h-full object-cover" /> : <GoogleG />}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -191,8 +252,8 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
             </>
           ) : (
             <>
-              <div className="tiny muted mb-3">{tx('Sign in with Google to unlock private backups. Your name, email and photo stay on this device.')}</div>
-              <button className="w-full flex items-center justify-center gap-2.5 bg-card border border-line rounded-xl py-3 text-[13px] font-semibold active:scale-[.98] transition disabled:opacity-60"
+              <div className="tiny muted mb-3">{tx('Sign in with Google to unlock encrypted backups.')}</div>
+              <button className="w-full flex items-center justify-center gap-2.5 bg-app-bg rounded-full py-3 text-[12px] font-extrabold active:scale-[.98] transition disabled:opacity-60"
                 onClick={doGoogleSignIn} disabled={busy || !googleReady}>
                 <GoogleG /> {busy ? tx('Opening Google…') : tx('Sign in with Google')}
               </button>
@@ -205,13 +266,13 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Appearance */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Appearance · 18 Themes')}</div>
+        <div className="group-label">{tx('Appearance · 18 Themes')}</div>
         <div className="card">
           <div className="tiny muted">{tx('Tap a color to change the whole app')}</div>
           <div className="grid grid-cols-6 sm:grid-cols-9 gap-2 mt-3">
             {THEMES.map((th, i) => (
               <button key={th.name} title={th.name} onClick={() => updateSettings({ theme: i })}
-                className={`h-8 rounded-xl border-2 transition ${settings.theme === i ? 'border-[color:var(--ink)] scale-105' : 'border-transparent'}`}
+                className={`h-8 rounded-full border-2 transition ${settings.theme === i ? 'border-[color:var(--ink)] scale-110' : 'border-transparent'}`}
                 style={{ background: th.primary }} />
             ))}
           </div>
@@ -226,7 +287,7 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
               const active = settings.themeMode === m.id;
               return (
                 <button key={m.id} onClick={() => updateSettings({ themeMode: m.id })}
-                  className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-semibold ${active ? 'text-white border-transparent' : 'border-line muted'}`}
+                  className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-[11px] font-bold ${active ? 'text-white' : 'muted bg-app-bg'}`}
                   style={active ? { background: 'var(--primary)' } : undefined}>
                   <Icon size={14} />{m.label}
                 </button>
@@ -238,22 +299,22 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Preferences */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Preferences')}</div>
+        <div className="group-label">{tx('Preferences')}</div>
         <div className="card !py-1">
           <Row icon={Database} title={tx('Currency')} sub={tx('Default currency')} right="BDT (৳)" onClick={() => showToast('Currency fixed to BDT')} />
           <div className="px-4 py-3 border-b border-line">
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Languages size={15} /></span>
+              <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Languages size={15} /></span>
               <div className="flex-1 min-w-0">
                 <div className="text-[12px] font-semibold">{tx('Language')}</div>
                 <div className="tiny muted">{tx('Tap to switch')}</div>
               </div>
-              <div className="flex rounded-xl border border-line overflow-hidden shrink-0">
+              <div className="flex rounded-full bg-app-bg p-1 shrink-0">
                 <button onClick={() => updateSettings({ language: 'en' })}
-                  className={`px-3 py-1.5 text-[11px] font-bold ${settings.language === 'en' ? 'text-white' : 'muted'}`}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold ${settings.language === 'en' ? 'text-white' : 'muted'}`}
                   style={settings.language === 'en' ? { background: 'var(--primary)' } : undefined}>English</button>
                 <button onClick={() => updateSettings({ language: 'bn' })}
-                  className={`px-3 py-1.5 text-[11px] font-bold ${settings.language === 'bn' ? 'text-white' : 'muted'}`}
+                  className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold ${settings.language === 'bn' ? 'text-white' : 'muted'}`}
                   style={settings.language === 'bn' ? { background: 'var(--primary)' } : undefined}>বাংলা</button>
               </div>
             </div>
@@ -261,7 +322,7 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
           <Row icon={Globe} title={tx('Date format')} right={settings.dateFormat} onClick={() => showToast('Dates follow DD/MM/YYYY')} />
           <Row icon={Bell} title={tx('Notifications')} sub={tx('Native phone notifications on due dates')}
             right={
-              <button onClick={async () => { if (settings.notificationsEnabled) { await updateSettings({ notificationsEnabled: false }); showToast(tx('Notifications off')); } else await enableNotifications(); }}
+              <button onClick={async () => { await handleNotificationPermission(); }}
                 className="w-9 h-5 rounded-full relative transition" style={{ background: settings.notificationsEnabled ? 'var(--primary)' : '#d7dedc' }}>
                 <span className="absolute w-3.5 h-3.5 rounded-full bg-white top-[3px] shadow transition-all" style={{ left: settings.notificationsEnabled ? 18 : 3 }} />
               </button>} />
@@ -274,9 +335,32 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
         </div>
       </div>
 
+      {/* Android runtime permissions — options are present in the built app */}
+      <div className="mt-6">
+        <div className="group-label">{tx('App permissions')}</div>
+        <div className="card !py-1">
+          <Row icon={Camera} title={tx('Photos & files')}
+            sub={isNative() ? tx('Needed for profile photo and receipt attachments') : tx('Uses the system picker — no runtime grant needed')}
+            right={perms.photos === 'granted' ? tx('Allowed') : tx('Allow')} onClick={handlePhotoPermission} />
+          <Row icon={Bell} title={tx('Notifications')}
+            sub={tx('Due-date reminders on this phone')}
+            right={perms.notification === 'granted' ? tx('Allowed') : tx('Allow')} onClick={handleNotificationPermission} />
+          {isNative() && (
+            <Row icon={ShieldCheck} title={tx('System permission settings')}
+              sub={tx('Change any permission Android has recorded')} right="›"
+              onClick={async () => { await openAppPermissionSettings(); await refreshPerms(); }} />
+          )}
+          <div className="px-4 py-2 bg-appbg/60 tiny muted">
+            {isNative()
+              ? tx('Permissions are requested only when you tap Allow or pick a photo. Nothing is enabled silently.')
+              : tx('On web/PWA the browser and system picker handle access — no Android permission is required.')}
+          </div>
+        </div>
+      </div>
+
       {/* Manage */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Manage')}</div>
+        <div className="group-label">{tx('Manage')}</div>
         <div className="card !py-1">
           <Row icon={Tags} title={tx('Categories')} sub={`${categories.length} ${lang === 'bn' ? 'বিভাগ' : 'categories'}`} right="›" onClick={() => onNavigate('categories')} />
           <Row icon={Wallet} title={tx('Accounts')} sub={`${accounts.length} ${lang === 'bn' ? 'অ্যাকাউন্ট' : 'accounts'} · bKash, Nagad, Rocket…`} right="›" onClick={() => onNavigate('accounts')} />
@@ -287,7 +371,7 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
 
       {/* Data & Security */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Data & Security')}</div>
+        <div className="group-label">{tx('Data & Security')}</div>
         <div className="card !py-1">
           <Row icon={HardDrive} title={tx('Local storage')} sub={`IndexedDB · ${accounts.length} ${lang === 'bn' ? 'অ্যাকাউন্ট' : 'accounts'} · ${transactions.length} ${lang === 'bn' ? 'লেনদেন' : 'transactions'}`}
             right={<span className="pill !text-[9px]" style={{ background: 'var(--income-soft)', color: 'var(--income)' }}>ON</span>}
@@ -363,48 +447,41 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
         </div>
       </div>
 
+      {/* Privacy & account deletion — required for a professional / Play Store listing */}
+      <div className="mt-6">
+        <div className="group-label">{lang === 'bn' ? 'গোপনীয়তা ও অ্যাকাউন্ট' : 'Privacy & Account'}</div>
+        <div className="card !py-1">
+          <Row icon={ShieldCheck}
+            title={lang === 'bn' ? 'গোপনীয়তা নীতি' : 'Privacy policy'}
+            sub={lang === 'bn' ? 'আপনার ডেটা কীভাবে ব্যবহৃত হয়' : 'How your data is handled'}
+            right="›"
+            onClick={() => setPrivacyOpen(true)} />
+          <Row icon={Trash2}
+            title={lang === 'bn' ? 'Google অ্যাকাউন্ট ডেটা মুছুন' : 'Delete Google account data'}
+            sub={lang === 'bn' ? 'সংযোগ বিচ্ছিন্ন + Drive ব্যাকআপ মুছে ফেলে' : 'Unlink Google and delete Drive backups'}
+            right={<span style={{ color: 'var(--expense)' }}>{lang === 'bn' ? 'মুছুন' : 'Delete'}</span>}
+            onClick={() => setDeleteAccountOpen(true)} />
+          <div className="px-4 py-2 bg-appbg/60 tiny muted">
+            {lang === 'bn'
+              ? 'আপনার ফিন্যান্স লেনদেন এই ডিভাইসেই থাকে। শুধু Google সংযোগ ও Drive ব্যাকআপ মুছে ফেলা হয়।'
+              : 'Your finance entries stay on this device. Only the Google link and Drive backups are removed.'}
+          </div>
+        </div>
+      </div>
+
       {/* Danger */}
       <div className="mt-6">
-        <div className="tiny font-bold tracking-widest uppercase muted mb-2 px-1">{tx('Danger zone')}</div>
+        <div className="group-label">{tx('Danger zone')}</div>
         <div className="card !py-1">
           <Row icon={RotateCcw} title={tx('Reset application')} sub={tx('Erases all local data and starts completely empty')}
             right={<span style={{ color: 'var(--expense)' }}>{tx('Reset')}</span>} onClick={() => setResetOpen(true)} />
         </div>
       </div>
 
-      <div className="tiny muted text-center mt-5 leading-relaxed">{tx('Your data stays on this device. No tracking, no analytics, no uploads without your action.')}</div>
       <DevFooter compact />
 
-      {/* Profile modal */}
-      <Modal open={profileOpen} title={tx('Edit Profile')} onClose={() => setProfileOpen(false)}
-        footer={<>
-          <button className="btn-ghost flex-1" onClick={() => setProfileOpen(false)}>{tx('Cancel')}</button>
-          <button className="btn-primary flex-1" onClick={async () => {
-            if (!nameDraft.trim()) { showToast(lang === 'bn' ? 'নাম লিখুন' : 'Enter your name'); return; }
-            await updateSettings({ profileName: nameDraft.trim(), profilePhoto: photoDraft });
-            setProfileOpen(false);
-            showToast(lang === 'bn' ? 'প্রোফাইল আপডেট হয়েছে' : 'Profile updated');
-          }}>{tx('Save Profile')}</button>
-        </>}>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center display text-[16px] text-white" style={{ background: 'var(--primary)' }}>
-              {photoDraft ? <img src={photoDraft} alt="Profile" className="w-full h-full object-cover" /> : initials}
-            </div>
-            <div>
-              <label className="btn-soft !py-2 !px-3 !text-[11px] cursor-pointer"><Camera size={14} /> {tx('Upload photo')}
-                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  if (f) setPhotoDraft(await shrinkImage(f, 400, 0.8));
-                }} />
-              </label>
-              {photoDraft && <button className="link !text-[10px] block mt-1" onClick={() => setPhotoDraft(undefined)}>{tx('Remove photo')}</button>}
-            </div>
-          </div>
-          <div><div className="field-label mb-1">{tx('Display name')}</div><input className="input" value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder={tx('Your name')} /></div>
-          <div className="tiny muted">{tx('Photo is compressed and stored only on this device.')}</div>
-        </div>
-      </Modal>
+      {/* Shared profile editor — same sheet used from mobile quick profile */}
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Passphrase modal */}
       <Modal open={!!passModal}
@@ -449,6 +526,18 @@ export function SettingsPage({ onNavigate }: { onNavigate: (p: PageId) => void }
       <ConfirmDialog open={resetOpen} title={tx('Reset application?')}
         message={tx('All local data will be erased. The app will start empty — only entries you add from now on will remain. Export a backup first if needed.')}
         confirmLabel={tx('Reset')} onCancel={() => setResetOpen(false)} onConfirm={async () => { await resetAll(); setResetOpen(false); }} />
+
+      <PrivacyPolicyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} lang={lang} />
+
+      <ConfirmDialog
+        open={deleteAccountOpen}
+        title={lang === 'bn' ? 'Google অ্যাকাউন্ট ডেটা মুছবেন?' : 'Delete Google account data?'}
+        message={lang === 'bn'
+          ? 'Google সংযোগ, অ্যাপে রাখা Google প্রোফাইল এবং আপনার Drive-এর সব অ্যাপ ব্যাকআপ মুছে ফেলা হবে। আপনার লোকাল লেনদেন অটছবে না।'
+          : 'This removes the Google link, saved Google profile and all app backups in your Drive. Your local transactions will not be touched.'}
+        confirmLabel={lang === 'bn' ? 'মুছুন' : 'Delete'}
+        onCancel={() => setDeleteAccountOpen(false)}
+        onConfirm={async () => { await deleteGoogleAccountData(); setDeleteAccountOpen(false); }} />
     </div>
   );
 }
@@ -459,7 +548,7 @@ function Row({ icon: Icon, title, sub, right, onClick }: {
   return (
     <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick?.(); }}
       className={`w-full flex items-center gap-3 py-3 px-4 border-b border-line last:border-0 text-left ${onClick ? 'cursor-pointer' : ''}`}>
-      <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Icon size={15} /></span>
+      <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Icon size={15} /></span>
       <span className="flex-1 min-w-0">
         <span className="block text-[12px] font-semibold">{title}</span>
         {sub && <span className="block tiny muted truncate">{sub}</span>}

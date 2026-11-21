@@ -8,7 +8,7 @@ export interface Theme {
 }
 
 export const THEMES: Theme[] = [
-  { name: 'Ocean Teal', primary: '#0d9b88', dark: '#0a7a6b', soft: '#e3f5f1' },
+  { name: 'Indigo Ink', primary: '#4f46e5', dark: '#3730a3', soft: '#eef2ff' },
   { name: 'Emerald', primary: '#10b981', dark: '#047857', soft: '#e3f7ee' },
   { name: 'Forest', primary: '#15803d', dark: '#166534', soft: '#e6f4ea' },
   { name: 'Ocean Blue', primary: '#0284c7', dark: '#0369a1', soft: '#e4f2fb' },
@@ -49,13 +49,11 @@ export function applyTheme(index: number, mode: 'light' | 'dark' | 'system') {
   const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
   const dark = mode === 'dark' || (mode === 'system' && prefersDark);
   root.classList.toggle('dark', dark);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#111b18' : t.primary);
+  // The app shell is deep navy in both modes, so the browser status bar and
+  // Android status-bar icons stay light regardless of the accent theme.
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#080d19' : '#151d33');
 
-  // Keep Android status-bar icons readable: dark icons on a light header,
-  // light icons on a dark one. Web/PWA has no native bars, so skip it there.
   if (Capacitor.isNativePlatform()) {
-    void SystemBars.setStyle({
-      style: dark ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
-    }).catch(() => {});
+    void SystemBars.setStyle({ style: SystemBarsStyle.Dark }).catch(() => {});
   }
 }

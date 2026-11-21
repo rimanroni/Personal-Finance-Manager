@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Personal Finance Manager</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.65; color: #17202a; background: #f6f8fb; }
+    main { max-width: 760px; margin: 40px auto; padding: 32px; background: #fff; border-radius: 20px; box-shadow: 0 12px 40px rgba(20,30,60,.08); }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    .date { color: #6b7280; font-size: 13px; margin-bottom: 24px; }
+    h2 { font-size: 15px; margin: 24px 0 6px; color: #0f766e; }
+    p, li { font-size: 14px; }
+    ul { padding-left: 20px; }
+    a { color: #0f766e; }
+    footer { margin-top: 28px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 13px; color: #6b7280; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0f172a; color: #e5e7eb; }
+      main { background: #162033; box-shadow: none; }
+      .date, footer { color: #94a3b8; }
+      h2, a { color: #5eead4; }
+      footer { border-color: #334155; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Personal Finance Manager — Privacy Policy</h1>
+    <div class="date">Effective date: 21 November 2026</div>
+
+    <h2>1. Who we are</h2>
+    <p>This app is developed by Roni Riman. It is a local-first personal finance tool. There is no advertising, analytics, tracking server or backend database by default.</p>
+
+    <h2>2. What data the app handles</h2>
+    <ul>
+      <li><strong>Finance data:</strong> accounts, transactions, categories, budgets, notes, reminders and settings are stored on your device in IndexedDB. It is never uploaded automatically.</li>
+      <li><strong>Profile:</strong> the name and photo you optionally enter are stored only on your device.</li>
+      <li><strong>Google Account:</strong> if you sign in, we receive your Google name, email and profile picture. They are used only to identify your backup account inside the app.</li>
+      <li><strong>Drive backups:</strong> only when you tap “Backup now” is an AES-256-GCM encrypted file written to the private <code>appDataFolder</code> of your own Google Drive. The passphrase is never stored.</li>
+    </ul>
+
+    <h2>3. Permissions used</h2>
+    <ul>
+      <li><strong>Internet:</strong> only for Google sign-in and explicit Drive backup/restore.</li>
+      <li><strong>Notifications:</strong> only for reminders you create. You can turn them off in Settings.</li>
+    </ul>
+
+    <h2>4. Sharing</h2>
+    <p>We do not sell, share or transmit your personal or financial data to third parties. Google is used only when you explicitly choose sign-in or backup.</p>
+
+    <h2>5. Retention and deletion</h2>
+    <p>Finance data stays on your device until you delete it or reset the app. Google account details and Drive backups can be removed from <strong>Settings → Privacy &amp; Account → Delete Google account data</strong>. Uninstalling the app removes local data on that device.</p>
+
+    <h2>6. Security</h2>
+    <p>Backups are encrypted with AES-256-GCM before upload. OAuth tokens are kept in memory only. No client secret is stored in this app.</p>
+
+    <h2>7. Children</h2>
+    <p>This app is not directed to children under 13.</p>
+
+    <h2>8. Changes</h2>
+    <p>Updated policies will be shown inside the app and on this page.</p>
+
+    <h2>9. Contact</h2>
+    <p>Questions or requests: <a href="https://wa.me/8801326552304">WhatsApp — Roni Riman</a></p>
+
+    <footer>Personal Finance Manager · Local-first · No backend by default</footer>
+  </main>
+</body>
+</html>

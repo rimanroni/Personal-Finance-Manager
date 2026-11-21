@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
         // Register before super.onCreate(): BridgeActivity builds the bridge
         // (and loads plugins) inside onCreate().
         registerPlugin(GoogleAuthPlugin.class);
+        registerPlugin(AppPermissionsPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { ArrowRight, Bell, Camera, Check, Cloud, Lock, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ArrowRight, Bell, Camera, Check, Cloud, Lock, Sparkles, Wallet } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { shrinkImage } from '../lib/image';
+import { localize } from '../lib/i18n';
 import { isGoogleSignInConfigured } from '../lib/googleConfig';
+import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 import * as drive from '../lib/drive';
 
 function GoogleG({ size = 18 }: { size?: number }) {
@@ -16,14 +18,25 @@ function GoogleG({ size = 18 }: { size?: number }) {
   );
 }
 
+function StepIcon({ children }: { children: ReactNode }) {
+  return (
+    <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-3"
+      style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}>
+      {children}
+    </div>
+  );
+}
+
 export function Onboarding() {
-  const { settings, updateSettings, completeOnboarding, enableNotifications, showToast } = useData();
+  const { settings, updateSettings, completeOnboarding, enableNotifications, showToast, lang } = useData();
+  const tx = (s: string) => localize(lang, s);
   const [step, setStep] = useState(0);
   const [name, setName] = useState(settings.profileName || '');
   const [photo, setPhoto] = useState<string | undefined>(settings.profilePhoto);
   const [busy, setBusy] = useState(false);
   const [signedIn, setSignedIn] = useState(() => drive.isConnected());
   const [googleReady, setGoogleReady] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -65,112 +78,131 @@ export function Onboarding() {
 
   return (
     <div className="onboarding-shell fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto overflow-x-hidden">
-      <div className="w-full max-w-sm bg-card rounded-[28px] shadow-2xl p-6 relative animate-pop my-auto">
+      <div className="w-full max-w-sm bg-card rounded-[26px] shadow-2xl p-6 relative animate-pop my-auto">
         <div className="flex items-center justify-between mb-6">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white display text-lg" style={{ background: 'var(--primary)' }}>৳</div>
+          <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-white display text-lg"
+            style={{ background: 'var(--primary)', boxShadow: '0 6px 16px -8px rgba(var(--primary-rgb),.95)' }}>৳</div>
           <div className="flex gap-1.5">
             {[0, 1, 2, 3].map((i) => (
               <span key={i} className="h-1.5 rounded-full transition-all"
-                style={{ width: i === step ? 20 : 6, background: i <= step ? 'var(--primary)' : 'var(--line)' }} />
+                style={{ width: i === step ? 22 : 6, background: i <= step ? 'var(--primary)' : 'var(--line)' }} />
             ))}
           </div>
         </div>
 
         {step === 0 && (
           <div className="animate-fade text-center">
-            <div className="text-5xl mb-3">👋</div>
-            <h1 className="display text-[24px] leading-tight">Welcome to your<br />money space</h1>
-            <p className="tiny muted mt-2 leading-relaxed">A beautiful, private place to track every taka — bKash, Nagad, Bank and more.</p>
-            <div className="space-y-2 mt-6 text-left">
+            <StepIcon><Wallet size={30} /></StepIcon>
+            <h1 className="display text-[23px] leading-tight">
+              {lang === 'bn' ? <>আপনার টাকার<br />নিজস্ব জগৎ</> : <>Welcome to your<br />money space</>}
+            </h1>
+            <p className="tiny muted mt-2 leading-relaxed">{tx('A beautiful, private place to track every taka — bKash, Nagad, Bank and more.')}</p>
+
+            <div className="mt-4 text-left">
+              <div className="tiny font-bold muted mb-1.5">{lang === 'bn' ? 'ভাষা বাছুন' : 'Choose your language'}</div>
+              <div className="segment">
+                <button onClick={() => updateSettings({ language: 'en' })} className={`seg ${settings.language === 'en' ? 'on' : ''}`}>English</button>
+                <button onClick={() => updateSettings({ language: 'bn' })} className={`seg ${settings.language === 'bn' ? 'on' : ''}`}>বাংলা</button>
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-5 text-left">
               {[
-                { icon: Lock, text: '100% private · data never leaves this device' },
-                { icon: Wallet, text: 'Every wallet separate, day-wise history' },
-                { icon: Bell, text: 'Reminders that feel like phone notifications' },
+                { icon: Lock, text: tx('100% private · data never leaves this device') },
+                { icon: Wallet, text: tx('Every wallet separate, day-wise history') },
+                { icon: Bell, text: tx('Reminders that feel like phone notifications') },
               ].map((f) => {
                 const Icon = f.icon;
                 return (
-                  <div key={f.text} className="flex items-center gap-3 bg-appbg rounded-2xl px-3 py-2.5">
-                    <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Icon size={15} /></span>
-                    <span className="text-[11px] font-semibold">{f.text}</span>
+                  <div key={f.text} className="flex items-center gap-3 bg-app-bg rounded-2xl px-3 py-2.5">
+                    <span className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                      style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Icon size={15} /></span>
+                    <span className="text-[11px] font-bold">{f.text}</span>
                   </div>
                 );
               })}
             </div>
-            <button className="btn-primary w-full mt-6" onClick={() => setStep(1)}>Get started <ArrowRight size={16} /></button>
+            <button className="btn-primary w-full mt-6" onClick={() => setStep(1)}>{tx('Get started')} <ArrowRight size={16} /></button>
+            <button className="link text-[10px] block mx-auto mt-3" onClick={() => setPrivacyOpen(true)}>
+              {lang === 'bn' ? 'গোপনীয়তা নীতি' : 'Privacy policy'}
+            </button>
           </div>
         )}
 
         {step === 1 && (
           <div className="animate-fade">
-            <div className="text-3xl mb-2">😊</div>
-            <h2 className="display text-[21px]">What should we call you?</h2>
-            <p className="tiny muted mt-1">This appears on your dashboard. You can change it anytime.</p>
+            <StepIcon><Camera size={28} /></StepIcon>
+            <h2 className="display text-[21px]">{tx('What should we call you?')}</h2>
+            <p className="tiny muted mt-1">{tx('This appears on your dashboard. You can change it anytime.')}</p>
             <div className="flex flex-col items-center gap-3 mt-6">
-              <label className="w-20 h-20 rounded-[24px] overflow-hidden shrink-0 flex items-center justify-center display text-[24px] text-white cursor-pointer relative"
+              <label className="w-20 h-20 rounded-full overflow-hidden shrink-0 flex items-center justify-center display text-[24px] text-white cursor-pointer relative"
                 style={{ background: 'var(--primary)' }}>
                 {photo ? <img src={photo} alt="Profile" className="w-full h-full object-cover" /> : initials}
-                <span className="absolute bottom-0 right-0 w-7 h-7 rounded-lg bg-card border border-line flex items-center justify-center" style={{ color: 'var(--primary-dark)' }}><Camera size={13} /></span>
+                <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-card border border-line flex items-center justify-center" style={{ color: 'var(--primary-dark)' }}><Camera size={13} /></span>
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                   const f = e.target.files?.[0];
                   if (f) setPhoto(await shrinkImage(f, 400, 0.8));
                 }} />
               </label>
-              <div className="tiny muted">Tap to add a photo (optional)</div>
-              {photo && <button className="link !text-[10px]" onClick={() => setPhoto(undefined)}>Remove photo</button>}
+              <div className="tiny muted">{tx('Tap to add a photo (optional)')}</div>
+              {photo && <button className="link !text-[10px]" onClick={() => setPhoto(undefined)}>{tx('Remove photo')}</button>}
             </div>
             <div className="mt-5">
-              <div className="field-label mb-1">Your name</div>
-              <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Rahim Ahmed" onKeyDown={(e) => { if (e.key === 'Enter') saveProfile(); }} />
+              <div className="field-label mb-1">{tx('Your name')}</div>
+              <input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === 'bn' ? 'যেমন: রহিম আহমেদ' : 'e.g. Rahim Ahmed'} onKeyDown={(e) => { if (e.key === 'Enter') saveProfile(); }} />
             </div>
-            <button className="btn-primary w-full mt-5" onClick={() => saveProfile()}>Continue <ArrowRight size={16} /></button>
-            <button className="link text-[11px] block mx-auto mt-3" onClick={() => saveProfile(true)}>Skip for now</button>
+            <button className="btn-primary w-full mt-5" onClick={() => saveProfile()}>{tx('Continue')} <ArrowRight size={16} /></button>
+            <button className="link text-[11px] block mx-auto mt-3" onClick={() => saveProfile(true)}>{tx('Skip for now')}</button>
           </div>
         )}
 
         {step === 2 && (
           <div className="animate-fade">
-            <div className="text-3xl mb-2">☁️</div>
-            <h2 className="display text-[21px]">Connect your Google account</h2>
-            <p className="tiny muted mt-1 leading-relaxed">Optional. Sign in to unlock encrypted backup. Your data stays local otherwise.</p>
+            <StepIcon><Cloud size={28} /></StepIcon>
+            <h2 className="display text-[21px]">{tx('Connect your Google account')}</h2>
+            <p className="tiny muted mt-1 leading-relaxed">{tx('Sign in only if you want encrypted Drive backup.')}</p>
 
             {signedIn ? (
-              <div className="bg-appbg rounded-2xl p-4 mt-6 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-card mx-auto flex items-center justify-center shadow-sm"><Check size={22} color="var(--income)" /></div>
-                <div className="text-[13px] font-bold mt-2">Connected with Google</div>
+              <div className="bg-app-bg rounded-[18px] p-4 mt-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-card mx-auto flex items-center justify-center shadow-sm"><Check size={22} color="var(--income)" /></div>
+                <div className="text-[13px] font-extrabold mt-2">{tx('Connected with Google')}</div>
                 <div className="tiny muted truncate">{settings.googleEmail}</div>
               </div>
             ) : (
               <>
-                <button className="w-full flex items-center justify-center gap-2.5 bg-card border border-line rounded-xl py-3 text-[13px] font-semibold mt-6 active:scale-[.98] transition disabled:opacity-60"
+                <button className="w-full flex items-center justify-center gap-2.5 bg-app-bg rounded-full py-3 text-[12px] font-extrabold mt-6 active:scale-[.98] transition disabled:opacity-60"
                   onClick={signIn} disabled={busy || !googleReady}>
-                  <GoogleG /> {busy ? 'Opening Google…' : 'Sign in with Google'}
+                  <GoogleG /> {busy ? tx('Opening Google…') : tx('Sign in with Google')}
                 </button>
-                {!googleReady && <div className="tiny muted mt-2 text-center">Google sign-in is not configured for this deployment.</div>}
+                {!googleReady && <div className="tiny muted mt-2 text-center">{tx('Google sign-in is not configured for this deployment.')}</div>}
               </>
             )}
 
-            <button className="btn-primary w-full mt-5" onClick={() => setStep(3)}>Continue <ArrowRight size={16} /></button>
-            <button className="link text-[11px] block mx-auto mt-3" onClick={() => setStep(3)}>Skip for now</button>
+            <button className="btn-primary w-full mt-5" onClick={() => setStep(3)}>{tx('Continue')} <ArrowRight size={16} /></button>
+            <button className="link text-[11px] block mx-auto mt-3" onClick={() => setStep(3)}>{tx('Skip for now')}</button>
           </div>
         )}
 
         {step === 3 && (
           <div className="animate-fade text-center">
-            <div className="text-5xl mb-3">🎉</div>
-            <h2 className="display text-[23px]">You're all set{name ? `, ${name.trim().split(/\s+/)[0]}` : ''}!</h2>
-            <p className="tiny muted mt-2 leading-relaxed">Your private finance space is ready. No demo entries — start clean, and add only what you actually use.</p>
+            <StepIcon><Sparkles size={30} /></StepIcon>
+            <h2 className="display text-[22px]">
+              {lang === 'bn' ? 'সব প্রস্তুত!' : "You're all set"}{name ? `, ${name.trim().split(/\s+/)[0]}` : ''}!
+            </h2>
+            <p className="tiny muted mt-2 leading-relaxed">{tx('All set. Start clean and add only the entries you use.')}</p>
             <div className="flex justify-center gap-3 mt-5">
-              <span className="pill !py-2 !px-3" style={{ background: 'var(--income-soft)', color: 'var(--income)' }}><ShieldCheck size={12} /> Private</span>
-              <span className="pill !py-2 !px-3" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Cloud size={12} /> {signedIn ? 'Backed up' : 'Offline'}</span>
-              <span className="pill !py-2 !px-3" style={{ background: 'var(--app-bg)', color: 'var(--muted)' }}><Sparkles size={12} /> Ready</span>
+              <span className="pill !py-2 !px-3" style={{ background: 'var(--primary-soft)', color: 'var(--primary-dark)' }}><Cloud size={12} /> {signedIn ? (lang === 'bn' ? 'ব্যাকআপ আছে' : 'Backed up') : (lang === 'bn' ? 'অফলাইন' : 'Offline')}</span>
+              <span className="pill !py-2 !px-3" style={{ background: 'var(--app-bg)', color: 'var(--muted)' }}><Sparkles size={12} /> {lang === 'bn' ? 'প্রস্তুত' : 'Ready'}</span>
             </div>
-            <button className="btn-ghost w-full mt-4 !py-2.5 !text-[11px]" onClick={async () => { await enableNotifications(); showToast('Reminders enabled'); }}>
-              <Bell size={14} /> Enable payment reminders
+            <button className="btn-ghost w-full mt-4 !py-2.5 !text-[11px]" onClick={async () => { await enableNotifications(); showToast(lang === 'bn' ? 'রিমাইন্ডার চালু হয়েছে' : 'Reminders enabled'); }}>
+              <Bell size={14} /> {lang === 'bn' ? 'পেমেন্ট রিমাইন্ডার চালু করুন' : 'Enable payment reminders'}
             </button>
-            <button className="btn-primary w-full mt-3" onClick={finish}>Open my dashboard <ArrowRight size={16} /></button>
+            <button className="btn-primary w-full mt-3" onClick={finish}>{lang === 'bn' ? 'ড্যাশবোর্ড খুলুন' : 'Open my dashboard'} <ArrowRight size={16} /></button>
           </div>
         )}
       </div>
+
+      <PrivacyPolicyModal open={privacyOpen} onClose={() => setPrivacyOpen(false)} lang={lang} />
     </div>
   );
 }
