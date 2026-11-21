@@ -1,3 +1,5 @@
+import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
+
 export interface Theme {
   name: string;
   primary: string;
@@ -48,4 +50,12 @@ export function applyTheme(index: number, mode: 'light' | 'dark' | 'system') {
   const dark = mode === 'dark' || (mode === 'system' && prefersDark);
   root.classList.toggle('dark', dark);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#111b18' : t.primary);
+
+  // Keep Android status-bar icons readable: dark icons on a light header,
+  // light icons on a dark one. Web/PWA has no native bars, so skip it there.
+  if (Capacitor.isNativePlatform()) {
+    void SystemBars.setStyle({
+      style: dark ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
+    }).catch(() => {});
+  }
 }

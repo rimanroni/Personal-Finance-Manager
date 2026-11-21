@@ -22,6 +22,14 @@
   --blue: #3b82f6;
   --amber: #f59e0b;
   --purple: #8b5cf6;
+
+  /* Android: Capacitor's SystemBars plugin overwrites these inline on <html>
+     with the real status-bar / cutout insets. On web, env() keeps iOS PWA
+     safe areas working and falls back to 0 on desktop. */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
 }
 
 .dark {
@@ -49,6 +57,46 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 #root { position: relative; isolation: isolate; min-height: 100%; }
+
+/*
+ * Android status-bar / cutout handling.
+ *
+ * Capacitor 8 (targetSdk 36) is edge-to-edge: the WebView fills the screen and
+ * the system status bar is drawn on top of it. `insetsHandling: "css"` makes
+ * the plugin report the exact top inset (including notches) as
+ * --safe-area-inset-top. We consume it here so the header starts BELOW the bar.
+ *
+ * On older WebViews the plugin pads the native view instead and reports 0,
+ * so this padding becomes 0 and there is never a double gap. On desktop/PWA
+ * the env() fallback is also 0, so the web layout is unchanged.
+ *
+ * The gradient paints a solid, theme-colored strip behind the status-bar icons
+ * (the translucent blurred header alone would let content show through).
+ */
+.app-header {
+  padding-top: calc(0.75rem + var(--safe-area-inset-top, 0px));
+  padding-bottom: 0.75rem;
+  background-image: linear-gradient(
+    to bottom,
+    var(--app-bg) 0,
+    var(--app-bg) var(--safe-area-inset-top, 0px),
+    transparent var(--safe-area-inset-top, 0px)
+  );
+}
+
+/* Same treatment for the tablet/landscape sidebar, which also starts at top 0. */
+.app-sidebar {
+  padding-top: calc(1.5rem + var(--safe-area-inset-top, 0px));
+  padding-bottom: 1.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  background-image: linear-gradient(
+    to bottom,
+    var(--card) 0,
+    var(--card) var(--safe-area-inset-top, 0px),
+    transparent var(--safe-area-inset-top, 0px)
+  );
+}
 
 /* Theme-aware ambient mesh. One fixed compositor layer — no blurred filters. */
 #root::before {

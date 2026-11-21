@@ -91,7 +91,7 @@ export function Layout({ page, setPage, onAdd, children }: {
   return (
     <div className="min-h-full lg:flex">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-[248px] shrink-0 min-h-screen sticky top-0 border-r border-line bg-card px-4 py-6">
+      <aside className="app-sidebar hidden lg:flex flex-col w-[248px] shrink-0 min-h-screen sticky top-0 border-r border-line bg-card">
         <div className="flex items-center gap-3 px-2 mb-8">
           <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white display text-lg" style={{ background: 'var(--primary)' }}>৳</div>
           <div>
@@ -127,7 +127,7 @@ export function Layout({ page, setPage, onAdd, children }: {
 
       {/* Main */}
       <div className="flex-1 min-w-0 pb-24 lg:pb-8">
-        <header className="sticky top-0 z-30 bg-appbg/85 backdrop-blur-xl border-b border-line/70 px-4 sm:px-6 py-3 flex items-center justify-between">
+        <header className="app-header sticky top-0 z-30 bg-appbg/85 backdrop-blur-xl border-b border-line/70 px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-2 lg:hidden">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white display text-sm" style={{ background: 'var(--primary)' }}>৳</div>
             <div className="display text-[14px]">Finance Manager</div>

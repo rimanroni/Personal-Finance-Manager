@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand colors (override Capacitor library defaults). -->
+    <color name="colorPrimary">#0D9B88</color>
+    <color name="colorPrimaryDark">#0A7A6B</color>
+    <color name="colorAccent">#0D9B88</color>
+
+    <!-- Fallback decor/status-bar background. The web header paints the
+         exact theme color over the inset area at runtime. -->
+    <color name="status_bar_background">#F6F8F8</color>
+</resources>
